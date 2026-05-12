@@ -3,131 +3,262 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>物流运费计算器</title>
+    <title>物流运费询价系统</title>
+    <!-- 引入 Bootstrap 美化界面 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- 引入 PapaParse 用于解析 CSV -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f4f7f6; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 90vh; margin: 0; }
-        .calculator { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); width: 100%; max-width: 480px; }
-        h2 { text-align: center; color: #333; margin-top: 0; margin-bottom: 25px; }
-        .form-group { margin-bottom: 20px; }
-        label { display: block; margin-bottom: 8px; color: #555; font-weight: 600; }
-        input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 16px; box-sizing: border-box; }
-        button { width: 100%; padding: 14px; background-color: #007bff; color: white; border: none; border-radius: 6px; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        #results { margin-top: 25px; padding-top: 20px; border-top: 1px dashed #eee; }
-        .result-item { background: #f8f9fa; padding: 15px; margin-bottom: 10px; border-radius: 6px; border-left: 4px solid #28a745; }
-        .price { color: #d9534f; font-size: 1.4em; font-weight: bold; }
-        .warning { color: #856404; background-color: #fff3cd; padding: 10px; border-radius: 4px; margin-top: 10px; font-size: 14px; }
+        body { background-color: #f8f9fa; padding: 20px; }
+        .container { max-width: 1000px; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .result-table th { background-color: #0d6efd; color: white; }
     </style>
 </head>
 <body>
-    <div class="calculator">
-        <h2>📦 物流运费估算</h2>
-        <div class="form-group"><label>货物重量 (kg)</label><input type="number" id="weight" placeholder="例如：25.5" step="0.1"></div>
-        <div class="form-group"><label>目的国家</label><input type="text" id="country" placeholder="例如：德国"></div>
-        <div class="form-group"><label>选择渠道</label><select id="channelSelect"></select></div>
-        <button onclick="calculate()">立即计算</button>
-        <div id="results"></div>
+
+<div class="container">
+    <h2 class="text-center mb-4">物流运费询价系统</h2>
+    
+<!-- 1. 系统状态提示 -->
+<div class="alert alert-info text-center" role="alert">
+    系统正在自动加载最新的价格表数据，请稍候... 加载完成后即可直接询价。
+</div>
+
+    <!-- 2. 询价表单 -->
+    <div class="card mb-4">
+        <div class="card-header">第二步：填写询价信息</div>
+        <div class="card-body">
+            <form id="inquiryForm" class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">国家/路向</label>
+                    <input type="text" class="form-control" id="country" placeholder="例如：美国" required>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">类型</label>
+                    <select class="form-select" id="type">
+                        <option value="文件">文件</option>
+                        <option value="物品">物品</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">是否带电</label>
+                    <select class="form-select" id="isBattery">
+                        <option value="否">否</option>
+                        <option value="是">是</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">实际重量 (g)</label>
+                    <input type="number" class="form-control" id="weight" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">长 (cm)</label>
+                    <input type="number" class="form-control" id="length" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">宽 (cm)</label>
+                    <input type="number" class="form-control" id="width" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">高 (cm)</label>
+                    <input type="number" class="form-control" id="height" required>
+                </div>
+                <div class="col-12 text-center mt-4">
+                    <button type="button" class="btn btn-primary btn-lg" onclick="calculatePrice()">查询报价</button>
+                </div>
+            </form>
+        </div>
     </div>
 
-    <script>
-        let channels = [], rates = [], countryZones = [];
+    <!-- 3. 结果展示 -->
+    <div id="resultArea" style="display: none;">
+        <h4>询价结果</h4>
+        <table class="table table-striped result-table table-hover">
+            <thead>
+                <tr>
+                    <th>渠道</th>
+                    <th>计费重(g)</th>
+                    <th>分区</th>
+                    <th>预估运费</th>
+                    <th>备注</th>
+                </tr>
+            </thead>
+            <tbody id="resultBody"></tbody>
+        </table>
+    </div>
+</div>
 
-        // CSV 解析器
-        async function loadCSV(file) {
-            const response = await fetch(file);
-            const text = await response.text();
-            const lines = text.split('\n').filter(l => l.trim() !== '');
-            const headers = lines[0].split(',').map(h => h.trim());
-            return lines.slice(1).map(line => {
-                const values = line.split(',').map(v => v.trim());
-                return headers.reduce((obj, header, i) => {
-                    obj[header] = values[i] || '';
-                    return obj;
-                }, {});
+<script>
+    // 全局变量存储解析后的CSV数据
+    let table1Data = [], table2Data = [], table3Data = [], table4Data = [];
+    // 标记4个表是否都已加载完毕
+    let loadedCount = 0;
+
+    // 页面加载完成后，自动开始读取数据
+    window.addEventListener('DOMContentLoaded', () => {
+        // 替换成你GitHub仓库中CSV文件的真实路径（如果是直接放在data文件夹下，默认就是下面的路径）
+        loadCSV('data/table1.csv', (data) => { table1Data = data; checkLoaded(); });
+        loadCSV('data/table2.csv', (data) => { table2Data = data; checkLoaded(); });
+        loadCSV('data/table3.csv', (data) => { table3Data = data; checkLoaded(); });
+        loadCSV('data/table4.csv', (data) => { table4Data = data; checkLoaded(); });
+    });
+
+    // 自动加载CSV的函数
+    function loadCSV(url, callback) {
+        Papa.parse(url, {
+            download: true, // 开启下载模式，自动通过URL读取
+            header: true,
+            skipEmptyLines: true,
+            complete: function(results) {
+                callback(results.data);
+                console.log(url + " 自动加载成功！");
+            },
+            error: function(err) {
+                console.error("读取 " + url + " 失败:", err);
+            }
+        });
+    }
+
+    // 检查4个表是否全部加载完成
+    function checkLoaded() {
+        loadedCount++;
+        if (loadedCount === 4) {
+            alert("✅ 所有价格表已自动加载完毕，您可以直接开始询价！");
+            // 可以在这里自动填充一些下拉框选项，比如国家列表等
+        }
+    }
+
+    // 核心计算函数（逻辑完全保持不变）
+    function calculatePrice() {
+        if (table1Data.length === 0 || table2Data.length === 0) {
+            alert("价格表数据尚未加载完成，请稍等片刻再试！");
+            return;
+        }
+
+        // 1. 获取表单数据
+        const country = document.getElementById('country').value.trim();
+        const type = document.getElementById('type').value; // 文件/物品
+        const isBattery = document.getElementById('isBattery').value; // 是/否
+        const actualWeight = parseFloat(document.getElementById('weight').value) || 0;
+        const L = parseFloat(document.getElementById('length').value) || 0;
+        const W = parseFloat(document.getElementById('width').value) || 0;
+        const H = parseFloat(document.getElementById('height').value) || 0;
+
+        // 2. 计算体积重与计费重
+        const volumeWeight = (L * W * H) / 5000 * 1000; 
+        let results = [];
+
+        // 3. 匹配国家分区 (从表2)
+        const countryRow = table2Data.find(r => r['国家'] === country);
+        const zone = countryRow ? countryRow['分区'] : null;
+        if (!zone) {
+            alert("未找到该国家对应的分区！请检查表2或输入的国家名称。");
+            return;
+        }
+
+        // --- 处理表1 (首续重计费) ---
+        table1Data.forEach(row => {
+            if (row['路向'] !== country && row['文件/物品'] !== type) return;
+            const maxSide = Math.max(L, W, H);
+            const girth = maxSide + 2 * ((L + W + H) - maxSide); 
+            const sumSides = L + W + H;
+            
+            if (row['重量限制（kg）'] && actualWeight / 1000 > parseFloat(row['重量限制（kg）'])) return;
+            if (row['尺寸限制（最长边不大于）(cm)'] && maxSide > parseFloat(row['尺寸限制（最长边不大于）(cm)'])) return;
+            if (row['尺寸限制（最长边+另外两边和的两倍）(cm)'] && girth > parseFloat(row['尺寸限制（最长边+另外两边和的两倍）(cm)'])) return;
+            if (row['尺寸限制（三边和）(cm)'] && sumSides > parseFloat(row['尺寸限制（三边和）(cm)'])) return;
+
+            let chargeableWeight = actualWeight;
+            const bubbleCondition = parseFloat(row['计泡条件（最长边大于）']);
+            const bubbleFactor = parseFloat(row['计泡系数']) || 5000;
+            
+            if (bubbleCondition && maxSide > bubbleCondition) {
+                const calcVolWeight = (L * W * H) / bubbleFactor * 1000;
+                chargeableWeight = Math.max(actualWeight, calcVolWeight);
+            }
+
+            const handlingFee = parseFloat(row['处理费']) || 0;
+            const firstWeight = parseFloat(row['首重(g)']);
+            const firstPrice = parseFloat(row['首重资费']);
+            const nextWeight = parseFloat(row['续重(g)']);
+            const nextPrice = parseFloat(row['续重资费']);
+            
+            let price = handlingFee + firstPrice;
+            if (chargeableWeight > firstWeight) {
+                price += Math.ceil((chargeableWeight - firstWeight) / nextWeight) * nextPrice;
+            }
+
+            results.push({
+                channel: row['渠道'],
+                weight: chargeableWeight.toFixed(0),
+                zone: zone,
+                price: price.toFixed(2),
+                remark: row['备注']
+            });
+        });
+
+        // --- 处理表3 (按重量直接查出运费) ---
+        const volWeightT3 = (L * W * H) / 5000 * 1000;
+        const chargeableWeightT3 = Math.max(actualWeight, volWeightT3);
+
+        table3Data.forEach(row => {
+            if (row['是否文件'] !== type && row['是否文件'] !== '通用') return; 
+            const weightLimit = parseFloat(row['重量']);
+            if (chargeableWeightT3 <= weightLimit) {
+                const price = parseFloat(row[zone]); 
+                if (price) {
+                    results.push({
+                        channel: row['渠道'],
+                        weight: chargeableWeightT3.toFixed(0),
+                        zone: zone,
+                        price: price.toFixed(2),
+                        remark: row['备注']
+                    });
+                }
+            }
+        });
+
+        // --- 处理表4 (按重量查出单价 * 重量) ---
+        const volWeightT4 = (L * W * H) / 5000 * 1000;
+        const chargeableWeightT4 = Math.max(actualWeight, volWeightT4);
+
+        table4Data.forEach(row => {
+            if (row['是否文件'] !== type && row['是否文件'] !== '通用') return;
+            const startW = parseFloat(row['起始重量']);
+            const endW = parseFloat(row['结束重量']);
+            
+            if (chargeableWeightT4 >= startW && chargeableWeightT4 <= endW) {
+                const unitPrice = parseFloat(row[zone]); 
+                if (unitPrice) {
+                    const price = unitPrice * (chargeableWeightT4 / 1000); 
+                    results.push({
+                        channel: row['渠道'],
+                        weight: chargeableWeightT4.toFixed(0),
+                        zone: zone,
+                        price: price.toFixed(2),
+                        remark: row['备注']
+                    });
+                }
+            }
+        });
+
+        // 4. 渲染结果
+        const tbody = document.getElementById('resultBody');
+        tbody.innerHTML = '';
+        // 按价格从低到高排序展示
+        results.sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
+        
+        if (results.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center">未找到符合条件的渠道，请检查尺寸、重量或路向！</td></tr>';
+        } else {
+            results.forEach(r => {
+                const tr = `<tr><td>${r.channel}</td><td>${r.weight}</td><td>${r.zone}</td><td>¥${r.price}</td><td>${r.remark}</td></tr>`;
+                tbody.innerHTML += tr;
             });
         }
+        document.getElementById('resultArea').style.display = 'block';
+    }
+</script>
 
-        // 页面加载
-        window.onload = async () => {
-            try {
-                channels = await loadCSV('channels.csv');
-                rates = await loadCSV('zone_rates.csv');
-                countryZones = await loadCSV('country_zones.csv');
-
-                const select = document.getElementById('channelSelect');
-                channels.forEach(c => {
-                    const opt = document.createElement('option');
-                    opt.value = c['渠道'];
-                    opt.textContent = `${c['渠道']} (${c['文件/物品']})`;
-                    select.appendChild(opt);
-                });
-            } catch (e) {
-                document.getElementById('results').innerHTML = '<p style="color:red;">加载数据失败，请检查CSV文件格式。</p>';
-            }
-        };
-
-        function calculate() {
-            const weightKg = parseFloat(document.getElementById('weight').value);
-            const country = document.getElementById('country').value.trim();
-            const channelName = document.getElementById('channelSelect').value;
-            const channel = channels.find(c => c['渠道'] === channelName);
-
-            if (!weightKg || !country || !channel) {
-                alert('请填写完整信息！');
-                return;
-            }
-
-            let resultText = '';
-            let total = 0;
-            const weightG = weightKg * 1000; // 转为克
-
-            // 判断是分区渠道还是固定国家渠道
-            if (channel['路向'] === '分区') {
-                // --- 分区计算逻辑 ---
-                const zoneInfo = countryZones.find(cz => cz['国家'] === country);
-                if (!zoneInfo) {
-                    resultText = `<p style="color:orange;">抱歉，${country} 暂无分区信息。</p>`;
-                } else {
-                    const zone = zoneInfo['分区']; // 如 "A区"
-                    const rateRow = rates.find(r => r['渠道'] === channelName && weightKg >= r['起始重量'] && weightKg <= r['结束重量']);
-                    if (rateRow && rateRow[zone]) {
-                        total = weightKg * parseFloat(rateRow[zone]);
-                        total += parseFloat(channel['处理费'] || 0);
-                        // 应用折扣
-                        total *= parseFloat(channel['最低折扣'] || 1);
-                        resultText = `<div class="result-item"><strong>${channelName}</strong><br>计费重量: ${weightKg} kg<br>所属分区: ${zone}<br>预估运费: <span class="price">¥ ${total.toFixed(2)}</span></div>`;
-                    } else {
-                        resultText = `<p style="color:red;">未找到 ${weightKg}kg 对应的费率。</p>`;
-                    }
-                }
-            } else {
-                // --- 首续重计算逻辑 ---
-                const baseWeight = parseFloat(channel['首重(g)']);
-                const contWeight = parseFloat(channel['续重(g)']);
-                let basePrice = parseFloat(channel['首重资费']);
-                let contPrice = parseFloat(channel['续重资费']);
-
-                if (weightG <= baseWeight) {
-                    total = basePrice;
-                } else {
-                    const extraUnits = Math.ceil((weightG - baseWeight) / contWeight);
-                    total = basePrice + extraUnits * contPrice;
-                }
-                total += parseFloat(channel['处理费'] || 0);
-                total *= parseFloat(channel['最低折扣'] || 1);
-                resultText = `<div class="result-item"><strong>${channelName}</strong><br>计费重量: ${weightKg} kg<br>预估运费: <span class="price">¥ ${total.toFixed(2)}</span></div>`;
-            }
-
-            // 检查限制
-            let warnings = [];
-            if (weightKg > parseFloat(channel['重量限制（kg）'] || 999)) warnings.push(`超重（限${channel['重量限制（kg）']}kg）`);
-            // ... 可以继续加尺寸限制的判断
-            
-            if (warnings.length > 0) {
-                resultText += `<div class="warning">⚠️ 注意：${warnings.join('，')}</div>`;
-            }
-
-            document.getElementById('results').innerHTML = resultText;
-        }
-    </script>
 </body>
 </html>
