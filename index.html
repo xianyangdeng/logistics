@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>物流运费计算器</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f4f7f6; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 90vh; margin: 0; }
+        .calculator { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); width: 100%; max-width: 480px; }
+        h2 { text-align: center; color: #333; margin-top: 0; margin-bottom: 25px; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; color: #555; font-weight: 600; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 16px; box-sizing: border-box; }
+        button { width: 100%; padding: 14px; background-color: #007bff; color: white; border: none; border-radius: 6px; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        #results { margin-top: 25px; padding-top: 20px; border-top: 1px dashed #eee; }
+        .result-item { background: #f8f9fa; padding: 15px; margin-bottom: 10px; border-radius: 6px; border-left: 4px solid #28a745; }
+        .price { color: #d9534f; font-size: 1.4em; font-weight: bold; }
+        .warning { color: #856404; background-color: #fff3cd; padding: 10px; border-radius: 4px; margin-top: 10px; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="calculator">
+        <h2>📦 物流运费估算</h2>
+        <div class="form-group"><label>货物重量 (kg)</label><input type="number" id="weight" placeholder="例如：25.5" step="0.1"></div>
+        <div class="form-group"><label>目的国家</label><input type="text" id="country" placeholder="例如：德国"></div>
+        <div class="form-group"><label>选择渠道</label><select id="channelSelect"></select></div>
+        <button onclick="calculate()">立即计算</button>
+        <div id="results"></div>
+    </div>
+
+    <script>
+        let channels = [], rates = [], countryZones = [];
+
+        // CSV 解析器
+        async function loadCSV(file) {
+            const response = await fetch(file);
+            const text = await response.text();
+            const lines = text.split('\n').filter(l => l.trim() !== '');
+            const headers = lines[0].split(',').map(h => h.trim());
+            return lines.slice(1).map(line => {
+                const values = line.split(',').map(v => v.trim());
+                return headers.reduce((obj, header, i) => {
+                    obj[header] = values[i] || '';
+                    return obj;
+                }, {});
+            });
+        }
+
+        // 页面加载
+        window.onload = async () => {
+            try {
+                channels = await loadCSV('channels.csv');
+                rates = await loadCSV('zone_rates.csv');
+                countryZones = await loadCSV('country_zones.csv');
+
+                const select = document.getElementById('channelSelect');
+                channels.forEach(c => {
+                    const opt = document.createElement('option');
+                    opt.value = c['渠道'];
+                    opt.textContent = `${c['渠道']} (${c['文件/物品']})`;
+                    select.appendChild(opt);
+                });
+            } catch (e) {
+                document.getElementById('results').innerHTML = '<p style="color:red;">加载数据失败，请检查CSV文件格式。</p>';
+            }
+        };
+
+        function calculate() {
+            const weightKg = parseFloat(document.getElementById('weight').value);
+            const country = document.getElementById('country').value.trim();
+            const channelName = document.getElementById('channelSelect').value;
+            const channel = channels.find(c => c['渠道'] === channelName);
+
+            if (!weightKg || !country || !channel) {
+                alert('请填写完整信息！');
+                return;
+            }
+
+            let resultText = '';
+            let total = 0;
+            const weightG = weightKg * 1000; // 转为克
+
+            // 判断是分区渠道还是固定国家渠道
+            if (channel['路向'] === '分区') {
+                // --- 分区计算逻辑 ---
+                const zoneInfo = countryZones.find(cz => cz['国家'] === country);
+                if (!zoneInfo) {
+                    resultText = `<p style="color:orange;">抱歉，${country} 暂无分区信息。</p>`;
+                } else {
+                    const zone = zoneInfo['分区']; // 如 "A区"
+                    const rateRow = rates.find(r => r['渠道'] === channelName && weightKg >= r['起始重量'] && weightKg <= r['结束重量']);
+                    if (rateRow && rateRow[zone]) {
+                        total = weightKg * parseFloat(rateRow[zone]);
+                        total += parseFloat(channel['处理费'] || 0);
+                        // 应用折扣
+                        total *= parseFloat(channel['最低折扣'] || 1);
+                        resultText = `<div class="result-item"><strong>${channelName}</strong><br>计费重量: ${weightKg} kg<br>所属分区: ${zone}<br>预估运费: <span class="price">¥ ${total.toFixed(2)}</span></div>`;
+                    } else {
+                        resultText = `<p style="color:red;">未找到 ${weightKg}kg 对应的费率。</p>`;
+                    }
+                }
+            } else {
+                // --- 首续重计算逻辑 ---
+                const baseWeight = parseFloat(channel['首重(g)']);
+                const contWeight = parseFloat(channel['续重(g)']);
+                let basePrice = parseFloat(channel['首重资费']);
+                let contPrice = parseFloat(channel['续重资费']);
+
+                if (weightG <= baseWeight) {
+                    total = basePrice;
+                } else {
+                    const extraUnits = Math.ceil((weightG - baseWeight) / contWeight);
+                    total = basePrice + extraUnits * contPrice;
+                }
+                total += parseFloat(channel['处理费'] || 0);
+                total *= parseFloat(channel['最低折扣'] || 1);
+                resultText = `<div class="result-item"><strong>${channelName}</strong><br>计费重量: ${weightKg} kg<br>预估运费: <span class="price">¥ ${total.toFixed(2)}</span></div>`;
+            }
+
+            // 检查限制
+            let warnings = [];
+            if (weightKg > parseFloat(channel['重量限制（kg）'] || 999)) warnings.push(`超重（限${channel['重量限制（kg）']}kg）`);
+            // ... 可以继续加尺寸限制的判断
+            
+            if (warnings.length > 0) {
+                resultText += `<div class="warning">⚠️ 注意：${warnings.join('，')}</div>`;
+            }
+
+            document.getElementById('results').innerHTML = resultText;
+        }
+    </script>
+</body>
+</html>
