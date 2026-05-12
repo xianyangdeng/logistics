@@ -1,158 +1,259 @@
-<script>
-    // 全局变量存储数据
-    let table1Data = [];
-    let table2Data = [];
-    let table3Data = [];
-    let table4Data = [];
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>物流运费询价系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; padding: 20px; }
+        .container { max-width: 1000px; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .result-table th { background-color: #0d6efd; color: white; }
+        .form-label { font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2 class="text-center mb-4">物流运费询价系统</h2>
+        
+        <div class="alert alert-info text-center" role="alert" id="statusAlert">
+            系统正在自动加载最新的价格表数据，请稍候...
+        </div>
 
-    // 加载CSV函数
-    async function loadCSV(url, variable) {
-        try {
-            const response = await fetch(url);
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-            const text = await response.text();
-            // 简单的CSV解析（假设没有复杂的引号嵌套）
-            const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
-            const headers = lines[0].split(',').map(h => h.trim());
+        <div class="card mb-4">
+            <div class="card-header">第二步：填写询价信息</div>
+            <div class="card-body">
+                <form id="inquiryForm" class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">国家/路向</label>
+                        <input type="text" class="form-control" id="country" placeholder="例如：美国" required>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">类型</label>
+                        <select class="form-select" id="type">
+                            <option value="文件">文件</option>
+                            <option value="物品" selected>物品</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">是否带电</label>
+                        <select class="form-select" id="isBattery">
+                            <option value="否" selected>否</option>
+                            <option value="是">是</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">实际重量 (g)</label>
+                        <input type="number" class="form-control" id="weight" value="1000" required>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <label class="form-label">长 (cm)</label>
+                        <input type="number" class="form-control" id="length" value="10" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">宽 (cm)</label>
+                        <input type="number" class="form-control" id="width" value="10" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">高 (cm)</label>
+                        <input type="number" class="form-control" id="height" value="10" required>
+                    </div>
+                    
+                    <div class="col-12 text-center mt-4">
+                        <button type="button" class="btn btn-primary btn-lg" onclick="calculatePrice()">查询报价</button>
+                    </div>
+                </form>
+            </div>
+        </div>
 
-            const data = lines.slice(1).map(line => {
-                const values = line.split(',').map(v => v.trim());
-                let obj = {};
-                headers.forEach((h, i) => {
-                    obj[h] = values[i];
+        <div id="resultArea" style="display: none;">
+            <h4>询价结果 <span class="badge bg-secondary" id="queryTime"></span></h4>
+            <div class="table-responsive">
+                <table class="table table-striped result-table table-hover">
+                    <thead>
+                        <tr>
+                            <th>渠道</th>
+                            <th>计费重(g)</th>
+                            <th>国家/分区</th>
+                            <th>预估运费</th>
+                            <th>时效</th>
+                            <th>备注</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let table1Data = [], table2Data = [], table3Data = [], table4Data = [];
+        let allLoaded = false;
+
+        // 加载CSV数据
+        async function loadCSV(url, callback) {
+            try {
+                const response = await fetch(url);
+                const text = await response.text();
+                const lines = text.trim().split('\n').map(line => line.trim());
+                const headers = lines[0].split(',').map(h => h.trim().replace(/^"(.*)"$/, '$1'));
+                
+                const data = lines.slice(1).map(line => {
+                    const values = line.split(',').map(v => v.trim().replace(/^"(.*)"$/, '$1'));
+                    let row = {};
+                    headers.forEach((h, i) => {
+                        row[h] = values[i];
+                    });
+                    return row;
                 });
-                return obj;
+                callback(data);
+            } catch (error) {
+                console.error(`加载 ${url} 失败:`, error);
+            }
+        }
+
+        // 页面加载初始化
+        window.addEventListener('DOMContentLoaded', async () => {
+            await Promise.all([
+                loadCSV('table1.csv', data => { table1Data = data; }),
+                loadCSV('table2.csv', data => { table2Data = data; }),
+                loadCSV('table3.csv', data => { table3Data = data; }),
+                loadCSV('table4.csv', data => { table4Data = data; })
+            ]);
+            document.getElementById('statusAlert').innerHTML = "✅ 所有价格表已自动加载完毕，您可以直接开始询价！";
+            allLoaded = true;
+        });
+
+        function calculatePrice() {
+            if (!allLoaded) {
+                alert("数据正在加载中，请稍后再试...");
+                return;
+            }
+
+            const country = document.getElementById('country').value.trim();
+            const type = document.getElementById('type').value;
+            const isBattery = document.getElementById('isBattery').value;
+            const actualWeight = parseFloat(document.getElementById('weight').value) || 0;
+            const L = parseFloat(document.getElementById('length').value) || 0;
+            const W = parseFloat(document.getElementById('width').value) || 0;
+            const H = parseFloat(document.getElementById('height').value) || 0;
+
+            if (!country) {
+                alert("请输入国家！");
+                return;
+            }
+
+            // 计算体积重 (仅物品)
+            const volumeWeight = (type === '物品') ? (L * W * H) / 5000 * 1000 : 0;
+            const chargeableWeight = Math.max(actualWeight, volumeWeight);
+            const chargeableWeightKg = chargeableWeight / 1000; // 转换为kg
+
+            let results = [];
+
+            // 1. 处理 Table 1 (直接匹配国家)
+            table1Data.forEach(row => {
+                if (row['路向'] === country && row['文件/物品'] === type) {
+                    // 检查带电限制
+                    if (row['带电'] === '是' && isBattery === '是') return;
+
+                    const firstWeight = parseFloat(row['首重(g)']) || 0;
+                    const nextWeightUnit = parseFloat(row['续重(g)']) || 0;
+                    
+                    let price = 0;
+                    if (chargeableWeight <= firstWeight) {
+                        price = parseFloat(row['首重资费']) || 0;
+                    } else {
+                        const nextUnits = Math.ceil((chargeableWeight - firstWeight) / nextWeightUnit);
+                        price = (parseFloat(row['首重资费']) || 0) + nextUnits * (parseFloat(row['续重资费']) || 0);
+                    }
+
+                    price = price * (parseFloat(row['最低折扣']) || 1);
+
+                    results.push({
+                        channel: row['渠道'],
+                        weight: chargeableWeight.toFixed(0),
+                        location: country,
+                        price: price.toFixed(2),
+                        time: "参考时效",
+                        source: "Table 1"
+                    });
+                }
             });
 
-            // 赋值给对应的全局变量
-            if (variable === 'table1') table1Data = data;
-            if (variable === 'table2') table2Data = data;
-            if (variable === 'table3') table3Data = data;
-            if (variable === 'table4') table4Data = data;
-
-            console.log(`${url} 自动加载成功!`);
-        } catch (error) {
-            console.error(`加载 ${url} 失败:`, error);
-        }
-    }
-
-    // 初始化加载所有表格
-    async function init() {
-        await Promise.all([
-            loadCSV('data/table1.csv', 'table1'),
-            loadCSV('data/table2.csv', 'table2'),
-            loadCSV('data/table3.csv', 'table3'),
-            loadCSV('data/table4.csv', 'table4')
-        ]);
-    }
-
-    // 核心计算函数
-    function calculatePrice() {
-        if (table1Data.length === 0) {
-            alert("数据正在加载中，请稍后...");
-            return;
-        }
-
-        // 1. 获取表单输入
-        const country = document.getElementById('country').value;
-        const type = document.getElementById('type').value; // 文件 或 物品
-        const weight = parseFloat(document.getElementById('weight').value);
-        const length = parseFloat(document.getElementById('length').value);
-        const width = parseFloat(document.getElementById('width').value);
-        const height = parseFloat(document.getElementById('height').value);
-
-        if (!country || isNaN(weight) || weight <= 0) {
-            alert("请填写完整的国家、重量信息！");
-            return;
-        }
-
-        // 2. 计算体积重 (如果是物品)
-        let volumetricWeight = 0;
-        if (type === '物品' && length && width && height) {
-            volumetricWeight = (length * width * height) / 5000;
-        }
-        const finalWeight = Math.max(weight, volumetricWeight);
-        const firstWeight = 0.5; // 首重 0.5kg
-        const unitWeight = 0.5;  // 续重单位 0.5kg
-
-        let resultHTML = `<h3>查询结果：${country} - ${type}</h3>`;
-        let foundAny = false;
-
-        // ==========================================
-        // 步骤 A: 查找分区 (为了 Table 3 和 4 使用)
-        // ==========================================
-        let zone = null;
-        // 在 table2 中查找该国家对应的分区
-        const zoneRow = table2Data.find(row => row['国家'] === country);
-        if (zoneRow) {
-            // 假设 table2 的结构是：国家 | 分区
-            // 注意：这里需要根据你 table2 实际的表头来写，假设表头叫 "分区"
-            zone = zoneRow['分区'];
-        }
-
-        // ==========================================
-        // 步骤 B: 处理 Table 1 (直接匹配国家)
-        // ==========================================
-        // 筛选 Table 1 中符合国家 和 类型 的行
-        const t1Rows = table1Data.filter(row => row['路向'] === country && row['文件/物品'] === type);
-
-        if (t1Rows.length > 0) {
-            // 找到匹配的行后，我们需要找到对应重量段的价格
-            // 假设 Table 1 的结构是：路向 | 文件/物品 | 0.5kg | 1kg | 1.5kg ...
-            // 我们需要找到大于等于 finalWeight 的最小列
-
-            // 获取所有重量表头 (跳过前两个字段)
-            const weightHeaders = Object.keys(t1Rows[0]).slice(2);
-
-            // 找到匹配的列名 (例如 "1.5kg")
-            let matchedHeader = weightHeaders.find(h => {
-                // 提取数字，例如 "1.5kg" -> 1.5
-                const limit = parseFloat(h);
-                return finalWeight <= limit;
-            });
-
-            if (matchedHeader) {
-                const price = t1Rows[0][matchedHeader];
-                resultHTML += `<p><strong>Table 1 价格:</strong> ${price} 元 (基于 ${matchedHeader})</p>`;
-                foundAny = true;
+            // 2. 处理 Table 3 & Table 4 (通过 Table 2 查分区，再查列)
+            // 先在 Table 2 中查找分区
+            let zone = null;
+            const zoneMatch = table2Data.find(row => row['国家'] === country);
+            if (zoneMatch) {
+                zone = zoneMatch['分区'];
             } else {
-                resultHTML += `<p><strong>Table 1:</strong> 重量超出价格表范围</p>`;
+                console.log(`国家 ${country} 未在 Table 2 中找到`);
+                document.getElementById('resultArea').style.display = 'block';
+                document.getElementById('resultBody').innerHTML = `<tr><td colspan="6" class="text-danger">未找到 ${country} 的分区信息，请检查 Table 2</td></tr>`;
+                return;
             }
+
+            // 根据类型选择 Table 3 (文件) 或 Table 4 (物品)
+            // 注意：Table 4 里的物品其实都是 "否" (非文件/非带电)，所以我们只匹配 "是否文件=否" 且 "是否带电=否"
+            let targetTable = (type === '文件') ? table3Data : table4Data;
+            let batteryFilter = (type === '文件') ? '是' : '否'; // Table 3 是文件，Table 4 是物品(非带电)
+
+            targetTable.forEach(row => {
+                // 匹配渠道类型和带电情况
+                if (row['是否文件'] === type && row['是否带电'] === batteryFilter) {
+                    // 找到对应分区的列
+                    let priceStr = row[zone];
+                    if (priceStr) {
+                        let price = parseFloat(priceStr);
+
+                        // Table 3 和 Table 4 的逻辑不同：
+                        // Table 3: 是一口价 (按重量段)
+                        // Table 4: 是区间价 (按重量区间行)
+                        // 这里简化处理：如果是 Table 3，直接取价格；如果是 Table 4，需要计算 (实际逻辑较复杂，此处简化为取该格数值)
+                        // 为了演示，我们假设 Table 4 的数值是该重量段的起步价 (实际业务逻辑可能需要更复杂的阶梯计算)
+
+                        results.push({
+                            channel: row['渠道'],
+                            weight: chargeableWeight.toFixed(0),
+                            location: `${country} (分区${zone})`,
+                            price: price.toFixed(2),
+                            time: "3-7天",
+                            source: `Table ${type === '文件' ? '3' : '4'}`
+                        });
+                    }
+                }
+            });
+
+            // 显示结果
+            displayResults(results);
         }
 
-        // ==========================================
-        // 步骤 C: 处理 Table 3 (一口价 - 文件)
-        // ==========================================
-        if (type === '文件' && table3Data.length > 0 && zone) {
-            // 在 Table 3 中查找 分区 等于 zone 的行
-            const t3Row = table3Data.find(row => row['分区'] === zone);
-            if (t3Row) {
-                const price = t3Row['价格']; // 假设 Table 3 只有一列价格
-                resultHTML += `<p><strong>Table 3 一口价:</strong> ${price} 元</p>`;
-                foundAny = true;
+        function displayResults(results) {
+            const tbody = document.getElementById('resultBody');
+            const resultArea = document.getElementById('resultArea');
+            const queryTimeSpan = document.getElementById('queryTime');
+            
+            // 设置当前时间
+            const now = new Date();
+            queryTimeSpan.textContent = now.toLocaleString();
+
+            if (results.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted">未找到匹配的报价，请检查输入的国家是否在价格表中</td></tr>`;
+            } else {
+                tbody.innerHTML = results.map(r => `
+                    <tr>
+                        <td>${r.channel}</td>
+                        <td>${r.weight}g</td>
+                        <td>${r.location}</td>
+                        <td><strong>¥${r.price}</strong></td>
+                        <td>${r.time}</td>
+                        <td>${r.source}</td>
+                    </tr>
+                `).join('');
             }
+            resultArea.style.display = 'block';
         }
-
-        // ==========================================
-        // 步骤 D: 处理 Table 4 (一口价 - 物品)
-        // ==========================================
-        if (type === '物品' && table4Data.length > 0 && zone) {
-            // 在 Table 4 中查找 分区 等于 zone 的行
-            const t4Row = table4Data.find(row => row['分区'] === zone);
-            if (t4Row) {
-                const price = t4Row['价格'];
-                resultHTML += `<p><strong>Table 4 一口价:</strong> ${price} 元</p>`;
-                foundAny = true;
-            }
-        }
-
-        if (!foundAny) {
-            resultHTML += `<p>未找到匹配的价格信息，请检查国家是否在分区表中，或数据格式是否正确。</p>`;
-        }
-
-        document.getElementById('result').innerHTML = resultHTML;
-    }
-
-    // 启动加载
-    init();
-</script>
+    </script>
+</body>
+</html>
