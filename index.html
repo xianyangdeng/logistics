@@ -3,185 +3,191 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>国际物流运费查询 (终极修复版)</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
-    <style>
-        body { font-family: -apple-system, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background: #f0f2f5; }
-        .container { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        h1 { text-align: center; color: #2c3e50; }
-        label { display: block; margin-top: 15px; font-weight: bold; color: #555; }
-        input, select { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
-        button { background: #e74c3c; color: white; border: none; padding: 12px; width: 100%; margin-top: 25px; border-radius: 5px; font-size: 16px; cursor: pointer; }
-        button:hover { background: #c0392b; }
-        #results { margin-top: 30px; }
-        .error-box { background: #ffdddd; border-left: 6px solid #f44336; padding: 15px; margin: 20px 0; color: #333; }
-        .log-box { background: #e8e8e8; padding: 10px; margin-top: 10px; font-family: monospace; font-size: 12px; color: #333; max-height: 200px; overflow-y: auto; }
-        .result-item { border: 1px solid #eee; padding: 15px; margin-bottom: 10px; border-radius: 5px; background: #f9f9f9; }
-        .price { color: #e74c3c; font-weight: bold; font-size: 1.2em; }
-    </style>
+    <title>国际物流询价系统</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-shipping-fast"></i> 国际物流询价系统</h1>
+            <p class="subtitle">请输入货物信息获取实时报价</p>
+        </header>
 
-<div class="container">
-    <h1>📦 运费查询 (修复版)</h1>
+        <!-- CSV文件上传区域 -->
+        <div class="csv-upload-section">
+            <h2><i class="fas fa-file-upload"></i> 上传报价数据文件</h2>
+            <p class="note">首次使用请上传4个CSV文件，之后浏览器会自动缓存数据</p>
+            
+            <div class="upload-grid">
+                <div class="upload-item">
+                    <label for="table1">table1.csv (基础运费表)</label>
+                    <input type="file" id="table1" accept=".csv" class="csv-input">
+                    <div class="upload-status" id="status1">等待上传</div>
+                </div>
+                
+                <div class="upload-item">
+                    <label for="table2">table2.csv (国家分区表)</label>
+                    <input type="file" id="table2" accept=".csv" class="csv-input">
+                    <div class="upload-status" id="status2">等待上传</div>
+                </div>
+                
+                <div class="upload-item">
+                    <label for="table3">table3.csv (分区运费表)</label>
+                    <input type="file" id="table3" accept=".csv" class="csv-input">
+                    <div class="upload-status" id="status3">等待上传</div>
+                </div>
+                
+                <div class="upload-item">
+                    <label for="table4">table4.csv (重量段运费表)</label>
+                    <input type="file" id="table4" accept=".csv" class="csv-input">
+                    <div class="upload-status" id="status4">等待上传</div>
+                </div>
+            </div>
+            
+            <div class="upload-actions">
+                <button id="loadDefaultBtn" class="btn-secondary">
+                    <i class="fas fa-database"></i> 使用示例数据
+                </button>
+                <button id="clearCacheBtn" class="btn-danger">
+                    <i class="fas fa-trash"></i> 清除缓存
+                </button>
+            </div>
+        </div>
 
-    <!-- 这里用于显示代码错误 -->
-    <div id="error-container"></div>
+        <!-- 查询表单 -->
+        <div class="main-content">
+            <div class="form-section">
+                <h2><i class="fas fa-search"></i> 货物信息查询</h2>
+                <form id="quoteForm">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="country"><i class="fas fa-globe"></i> 目的国家/地区 *</label>
+                            <select id="country" required disabled>
+                                <option value="">请先上传CSV文件</option>
+                            </select>
+                        </div>
 
-    <label>国家:</label>
-    <input type="text" id="country" placeholder="例如：法国">
+                        <div class="form-group">
+                            <label for="weight"><i class="fas fa-weight-hanging"></i> 重量 (kg) *</label>
+                            <input type="number" id="weight" step="0.01" min="0.01" max="100" required placeholder="例如：2.5">
+                        </div>
 
-    <label>重量 (kg):</label>
-    <input type="number" id="weight" placeholder="例如：1">
+                        <div class="form-group">
+                            <label><i class="fas fa-bolt"></i> 是否带电</label>
+                            <div class="radio-group">
+                                <label class="radio-label">
+                                    <input type="radio" name="isElectric" value="是" checked>
+                                    <span class="radio-custom"></span> 是
+                                </label>
+                                <label class="radio-label">
+                                    <input type="radio" name="isElectric" value="否">
+                                    <span class="radio-custom"></span> 否
+                                </label>
+                            </div>
+                        </div>
 
-    <label>类型:</label>
-    <select id="type">
-        <option value="物品">物品</option>
-        <option value="文件">文件</option>
-    </select>
+                        <div class="form-group">
+                            <label><i class="fas fa-file-alt"></i> 是否文件</label>
+                            <div class="radio-group">
+                                <label class="radio-label">
+                                    <input type="radio" name="isDocument" value="是" checked>
+                                    <span class="radio-custom"></span> 是
+                                </label>
+                                <label class="radio-label">
+                                    <input type="radio" name="isDocument" value="否">
+                                    <span class="radio-custom"></span> 否
+                                </label>
+                            </div>
+                        </div>
 
-    <label>是否带电:</label>
-    <select id="power">
-        <option value="否">否</option>
-        <option value="是">是</option>
-    </select>
+                        <div class="form-group dimensions">
+                            <label><i class="fas fa-ruler-combined"></i> 尺寸 (cm)</label>
+                            <div class="dimensions-inputs">
+                                <input type="number" id="length" placeholder="长" min="1" max="200">
+                                <span>×</span>
+                                <input type="number" id="width" placeholder="宽" min="1" max="200">
+                                <span>×</span>
+                                <input type="number" id="height" placeholder="高" min="1" max="200">
+                            </div>
+                        </div>
+                    </div>
 
-    <button onclick="queryRates()">🔍 查询运费</button>
+                    <div class="form-actions">
+                        <button type="submit" class="btn-primary" id="submitBtn" disabled>
+                            <i class="fas fa-search"></i> 查询报价
+                        </button>
+                        <button type="reset" class="btn-secondary">
+                            <i class="fas fa-redo"></i> 重置
+                        </button>
+                    </div>
+                </form>
+            </div>
 
-    <div id="results"></div>
-    <!-- 调试日志显示区域 -->
-    <div id="debug-log" class="log-box" style="display:none;"></div>
-</div>
+            <!-- 结果区域 -->
+            <div class="results-section">
+                <h2><i class="fas fa-list-alt"></i> 报价结果</h2>
+                <div id="loadingIndicator" class="loading hidden">
+                    <div class="spinner"></div>
+                    <p>正在查询报价，请稍候...</p>
+                </div>
+                
+                <div id="resultsContainer" class="hidden">
+                    <div class="results-header">
+                        <div class="search-summary">
+                            <p><strong>查询条件：</strong> 
+                                <span id="summaryCountry"></span> | 
+                                <span id="summaryWeight"></span> kg | 
+                                带电: <span id="summaryElectric"></span> | 
+                                文件: <span id="summaryDocument"></span>
+                            </p>
+                        </div>
+                        <div class="sort-options">
+                            <label for="sortBy">排序方式：</label>
+                            <select id="sortBy">
+                                <option value="priceAsc">价格从低到高</option>
+                                <option value="priceDesc">价格从高到低</option>
+                                <option value="channel">按渠道名称</option>
+                            </select>
+                        </div>
+                    </div>
 
-<script>
-    // --- 1. 强制初始化变量，防止未定义报错 ---
-    let table1Data = [];
-    let table2Data = [];
-    let table3Data = [];
-    let table4Data = [];
-    let isDataLoaded = false;
+                    <div class="table-container">
+                        <table id="resultsTable">
+                            <thead>
+                                <tr>
+                                    <th>渠道名称</th>
+                                    <th>类型</th>
+                                    <th>运费 (CNY)</th>
+                                    <th>备注</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="resultsBody">
+                                <!-- 动态填充结果 -->
+                            </tbody>
+                        </table>
+                    </div>
 
-    // --- 2. 全局错误捕获 (如果代码崩溃，这里会显示红框) ---
-    window.onerror = function(msg, url, line) {
-        const errDiv = document.getElementById('error-container');
-        errDiv.innerHTML = `<div class="error-box"><strong>代码崩溃了！</strong><br>${msg}<br>第 ${line} 行</div>`;
-        console.error("Global Error:", msg, line);
-        return true;
-    };
+                    <div class="no-results hidden" id="noResults">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <p>未找到符合条件的报价，请调整查询条件。</p>
+                    </div>
+                </div>
 
-    // --- 3. 加载数据 ---
-    window.onload = function() {
-        log("开始加载 CSV 文件...");
-        
-        // 注意：这里使用了相对路径，确保 CSV 和 HTML 在同一文件夹
-        const files = ['table1.csv', 'table2.csv', 'table3.csv', 'table4.csv'];
-        
-        Promise.all(files.map(file => 
-            fetch(file)
-                .then(res => {
-                    if (!res.ok) throw new Error(`${file} 找不到 (404)`);
-                    return res.text();
-                })
-                .then(text => {
-                    const parsed = Papa.parse(text, { header: true }).data;
-                    log(`✅ ${file} 加载成功，共 ${parsed.length} 行`);
-                    return parsed;
-                })
-        )).then(results => {
-            table1Data = results[0];
-            table2Data = results[1];
-            table3Data = results[2];
-            table4Data = results[3];
-            isDataLoaded = true;
-            log("🎉 所有数据加载完成！可以查询了。");
-        }).catch(err => {
-            document.getElementById('error-container').innerHTML = `<div class="error-box">❌ 数据加载失败：<br>${err.message}<br>请检查文件名是否正确，且已上传到 GitHub。</div>`;
-        });
-    };
+                <div id="emptyState" class="empty-state">
+                    <i class="fas fa-box-open"></i>
+                    <p>请先上传CSV数据文件，然后输入查询条件获取报价</p>
+                </div>
+            </div>
+        </div>
 
-    // --- 4. 查询函数 (去掉了 setTimeout，直接运行) ---
-    function queryRates() {
-        // 如果数据没加载完
-        if (!isDataLoaded) {
-            alert("数据还在加载中，请等待几秒钟后再试！");
-            return;
-        }
+        <footer>
+            <p>© 2024 国际物流询价系统 | 数据更新时间：<span id="updateTime"></span></p>
+        </footer>
+    </div>
 
-        // 获取输入值
-        const country = document.getElementById('country').value.trim();
-        const weight = parseFloat(document.getElementById('weight').value);
-        const type = document.getElementById('type').value;
-        const power = document.getElementById('power').value;
-
-        // 基础验证
-        if (!country || isNaN(weight)) {
-            alert("请填写国家和重量！");
-            return;
-        }
-
-        log(`--- 开始查询 ---`);
-        log(`输入: 国家=${country}, 重量=${weight}, 类型=${type}, 带电=${power}`);
-        log(`数据源行数: T1=${table1Data.length}, T2=${table2Data.length}`);
-
-        let results = [];
-
-        try {
-            // --- 测试逻辑：只查 Table 1 ---
-            // 我们遍历前 10 行看看数据结构
-            log("正在检查 Table 1 的前几行数据...");
-            table1Data.slice(0, 5).forEach((row, index) => {
-                log(`第${index+1}行数据:`, row);
-            });
-
-            // 执行查询
-            table1Data.forEach((row, index) => {
-                // 打印每一行的关键列（防止列名写错）
-                // 注意：这里假设你的列名是 "路向", "文件_物品", "是否带电"
-                // 如果你的列名不同，这里会显示 undefined，你就知道要改哪里了
-                const rowCountry = row['路向'] || row['国家'] || row['Destination']; 
-                const rowType = row['文件_物品'] || row['类型'];
-                const rowPower = row['是否带电'] || row['带电'];
-
-                if (index < 5) { // 只打印前5行的匹配尝试
-                     log(`尝试匹配第${index+1}行: CSV国家=${rowCountry}, CSV类型=${rowType}`);
-                }
-
-                // 严格匹配
-                if (rowCountry === country && rowType === type && rowPower === power) {
-                    log(`🎉 匹配成功！第 ${index+1} 行`);
-                    results.push({
-                        channel: row['渠道'] || "未知渠道",
-                        price: "计算中...", // 简化显示
-                        debug: "Matched Table 1"
-                    });
-                }
-            });
-
-        } catch (e) {
-            log("查询过程中发生错误: " + e.message);
-        }
-
-        // 显示结果
-        const resDiv = document.getElementById('results');
-        if (results.length === 0) {
-            resDiv.innerHTML = "<p>未找到匹配项。请查看下方的灰色调试日志，检查列名是否匹配。</p>";
-        } else {
-            resDiv.innerHTML = `<h3>找到 ${results.length} 个结果：</h3>` + 
-                results.map(r => `<div class="result-item"><strong>${r.channel}</strong>: ${r.price}</div>`).join('');
-        }
-    }
-
-    // 简单的日志打印函数，同时输出到页面和控制台
-    function log(msg, obj) {
-        console.log(msg, obj || "");
-        const logDiv = document.getElementById('debug-log');
-        logDiv.style.display = 'block';
-        const entry = document.createElement('div');
-        entry.textContent = "> " + msg + (obj ? " " + JSON.stringify(obj) : "");
-        logDiv.appendChild(entry);
-        logDiv.scrollTop = logDiv.scrollHeight;
-    }
-</script>
-
+    <script src="js/papaparse.min.js"></script>
+    <script src="js/app.js"></script>
 </body>
 </html>
