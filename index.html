@@ -97,7 +97,6 @@
             gap: 10px;
         }
         
-        /* 修复复选框视觉显示 */
         .checkbox-item input[type="checkbox"] {
             position: relative;
             width: 24px;
@@ -232,6 +231,17 @@
         .detail-value {
             font-weight: 600;
             color: #333;
+        }
+        
+        .discount-badge {
+            display: inline-block;
+            background-color: #e74c3c;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+            margin-left: 5px;
         }
         
         .no-results {
@@ -416,6 +426,7 @@
                 allCountries = [...new Set(table2Data.map(row => row['国家']))].sort();
                 
                 console.log('✅ CSV加载成功！');
+                console.log('📊 table3数据示例:', table3Data.slice(0, 3));
                 populateCountryList();
                 
             } catch (error) {
@@ -573,12 +584,17 @@
                 const discount = parseFloat(row['最低折扣']) || 1;
                 totalRate = totalRate * discount;
                 
+                // 格式化折扣显示
+                const discountText = discount < 1 ? `(${(discount * 10).toFixed(1)}折)` : '';
+                
                 results.push({
                     channel: row['渠道'],
                     rate: totalRate,
                     details: {
                         '渠道': row['渠道'],
                         '计费重': chargeableWeight.toFixed(2) + 'kg',
+                        '原价': '¥' + (totalRate / discount).toFixed(2),
+                        '折扣': discountText,
                         '总价': '¥' + totalRate.toFixed(2),
                         '备注': row['备注']
                     }
@@ -591,6 +607,7 @@
         function calculateTable3Rate(zoneCode, isFile, isElectric, weight, dimensions) {
             console.log(`\n📋 table3匹配...`);
             console.log(`   文件: ${isFile ? '是' : '否'}, 带电: ${isElectric ? '是' : '否'}`);
+            console.log(`   table3数据总行数: ${table3Data.length}`);
             
             const results = [];
             const roundedWeight = ceilToHalf(weight);
@@ -604,28 +621,48 @@
                 console.log(`   计费重: ${chargeableWeight.toFixed(2)}kg`);
             }
             
-            table3Data.forEach(row => {
-                if (row['是否文件'] === (isFile ? '是' : '否') &&
-                    row['是否带电'] === (isElectric ? '是' : '否') &&
-                    parseFloat(row['重量']) === roundedWeight) {
-                    
-                    const rate = parseFloat(row[zoneCode]);
-                    if (rate > 0) {
-                        const finalRate = rate * (dimensions.hasDimensions ? chargeableWeight / roundedWeight : 1);
-                        results.push({
-                            channel: row['渠道'],
-                            rate: finalRate,
-                            details: {
-                                '渠道': row['渠道'],
-                                '重量': roundedWeight + 'kg',
-                                '总价': '¥' + finalRate.toFixed(2),
-                                '备注': row['备注']
-                            }
-                        });
-                    }
+            // 修复文件匹配逻辑：确保正确匹配"是否文件"列
+            table3Data.forEach((row, index) => {
+                const rowIsFile = row['是否文件'];
+                const expectedIsFile = isFile ? '是' : '否';
+                
+                console.log(`   检查第${index + 1}行: ${row['渠道']}, 是否文件="${rowIsFile}", 期望="${expectedIsFile}"`);
+                
+                if (rowIsFile !== expectedIsFile) {
+                    console.log(`   ❌ 文件类型不匹配: ${rowIsFile} ≠ ${expectedIsFile}`);
+                    return;
+                }
+                
+                if (row['是否带电'] !== (isElectric ? '是' : '否')) {
+                    console.log(`   ❌ 带电类型不匹配`);
+                    return;
+                }
+                
+                if (parseFloat(row['重量']) !== roundedWeight) {
+                    console.log(`   ❌ 重量不匹配: ${row['重量']} ≠ ${roundedWeight}`);
+                    return;
+                }
+                
+                console.log(`   ✅ 匹配成功: ${row['渠道']}`);
+                
+                const rate = parseFloat(row[zoneCode]);
+                if (rate > 0) {
+                    const finalRate = rate * (dimensions.hasDimensions ? chargeableWeight / roundedWeight : 1);
+                    results.push({
+                        channel: row['渠道'],
+                        rate: finalRate,
+                        details: {
+                            '渠道': row['渠道'],
+                            '重量': roundedWeight + 'kg',
+                            '单价': '¥' + rate.toFixed(2) + '/kg',
+                            '总价': '¥' + finalRate.toFixed(2),
+                            '备注': row['备注']
+                        }
+                    });
                 }
             });
             
+            console.log(`   table3匹配结果: ${results.length}个`);
             return results;
         }
         
@@ -647,26 +684,24 @@
                 const startWeight = parseFloat(row['起始重量']);
                 const endWeight = parseFloat(row['结束重量']);
                 
-                if (row['是否文件'] === (isFile ? '物品' : '物品') &&
-                    row['是否带电'] === (isElectric ? '是' : '否') &&
-                    startWeight <= roundedWeight &&
-                    endWeight >= roundedWeight) {
-                    
-                    const ratePerKg = parseFloat(row[zoneCode]);
-                    if (ratePerKg > 0) {
-                        const totalRate = ratePerKg * chargeableWeight;
-                        results.push({
-                            channel: row['渠道'],
-                            rate: totalRate,
-                            details: {
-                                '渠道': row['渠道'],
-                                '重量': chargeableWeight.toFixed(1) + 'kg',
-                                '单价': '¥' + ratePerKg.toFixed(2) + '/kg',
-                                '总价': '¥' + totalRate.toFixed(2),
-                                '备注': row['备注']
-                            }
-                        });
-                    }
+                if (row['是否文件'] !== (isFile ? '物品' : '物品')) return;
+                if (row['是否带电'] !== (isElectric ? '是' : '否')) return;
+                if (startWeight > roundedWeight || endWeight < roundedWeight) return;
+                
+                const ratePerKg = parseFloat(row[zoneCode]);
+                if (ratePerKg > 0) {
+                    const totalRate = ratePerKg * chargeableWeight;
+                    results.push({
+                        channel: row['渠道'],
+                        rate: totalRate,
+                        details: {
+                            '渠道': row['渠道'],
+                            '重量': chargeableWeight.toFixed(1) + 'kg',
+                            '单价': '¥' + ratePerKg.toFixed(2) + '/kg',
+                            '总价': '¥' + totalRate.toFixed(2),
+                            '备注': row['备注']
+                        }
+                    });
                 }
             });
             
@@ -697,10 +732,11 @@
                 
                 for (const [key, value] of Object.entries(result.details)) {
                     if (key !== '总价') {
+                        const isDiscount = key === '折扣' && value;
                         html += `
                             <div class="detail-item">
                                 <div class="detail-label">${key}</div>
-                                <div class="detail-value">${value}</div>
+                                <div class="detail-value ${isDiscount ? 'discount-value' : ''}">${value}</div>
                             </div>
                         `;
                     }
