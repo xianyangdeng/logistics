@@ -2,186 +2,774 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>国际物流运费查询 (终极修复版)</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>国际物流询价</title>
     <style>
-        body { font-family: -apple-system, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background: #f0f2f5; }
-        .container { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        h1 { text-align: center; color: #2c3e50; }
-        label { display: block; margin-top: 15px; font-weight: bold; color: #555; }
-        input, select { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
-        button { background: #e74c3c; color: white; border: none; padding: 12px; width: 100%; margin-top: 25px; border-radius: 5px; font-size: 16px; cursor: pointer; }
-        button:hover { background: #c0392b; }
-        #results { margin-top: 30px; }
-        .error-box { background: #ffdddd; border-left: 6px solid #f44336; padding: 15px; margin: 20px 0; color: #333; }
-        .log-box { background: #e8e8e8; padding: 10px; margin-top: 10px; font-family: monospace; font-size: 12px; color: #333; max-height: 200px; overflow-y: auto; }
-        .result-item { border: 1px solid #eee; padding: 15px; margin-bottom: 10px; border-radius: 5px; background: #f9f9f9; }
-        .price { color: #e74c3c; font-weight: bold; font-size: 1.2em; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+            line-height: 1.5;
+            padding: 10px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 100%;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #1a6dcc 0%, #2c9ce0 100%);
+            color: white;
+            padding: 15px;
+            text-align: center;
+        }
+        
+        h1 {
+            font-size: 20px;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        
+        .subtitle {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 15px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            color: #444;
+            font-size: 14px;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 12px 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            background-color: #fff;
+            -webkit-appearance: none;
+        }
+        
+        .dimensions {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+        
+        .dimensions input {
+            text-align: center;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            gap: 20px;
+            margin-top: 5px;
+            padding: 10px 0;
+        }
+        
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .checkbox-item input[type="checkbox"] {
+            width: 22px;
+            height: 22px;
+            margin: 0;
+            cursor: pointer;
+            accent-color: #1a6dcc;
+        }
+        
+        .checkbox-item label {
+            margin-bottom: 0;
+            font-weight: normal;
+            font-size: 14px;
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #1a6dcc 0%, #2c9ce0 100%);
+            color: white;
+            border: none;
+            padding: 14px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+            transition: all 0.2s;
+        }
+        
+        button:active {
+            transform: scale(0.98);
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            display: none;
+        }
+        
+        .spinner {
+            border: 3px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top: 3px solid #2c9ce0;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .results-container {
+            margin-top: 15px;
+        }
+        
+        .result-card {
+            background-color: #fff;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            border-left: 4px solid #2c9ce0;
+        }
+        
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            padding-bottom: 8px;
+            border-bottom: 1px dashed #eee;
+        }
+        
+        .channel-name {
+            font-weight: 600;
+            font-size: 15px;
+            color: #1a6dcc;
+        }
+        
+        .price {
+            font-weight: 700;
+            font-size: 18px;
+            color: #e74c3c;
+        }
+        
+        .result-details {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            font-size: 13px;
+        }
+        
+        .detail-item {
+            padding: 5px 0;
+        }
+        
+        .detail-label {
+            color: #777;
+            font-size: 12px;
+            margin-bottom: 2px;
+        }
+        
+        .detail-value {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .no-results {
+            text-align: center;
+            padding: 30px 15px;
+            color: #888;
+            font-size: 14px;
+        }
+        
+        .debug-info {
+            background-color: #f0f7ff;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 12px;
+        }
+        
+        .debug-info h3 {
+            color: #1a6dcc;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+        
+        .data-status {
+            background-color: #fff3cd;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 12px;
+            color: #856404;
+            border-left: 4px solid #ffc107;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 10px;
+            color: #777;
+            font-size: 12px;
+            border-top: 1px solid #eee;
+            margin-top: 10px;
+        }
+        
+        /* 移动端优化 */
+        @media (max-width: 480px) {
+            body {
+                padding: 5px;
+            }
+            
+            .container {
+                border-radius: 8px;
+            }
+            
+            header {
+                padding: 12px;
+            }
+            
+            h1 {
+                font-size: 18px;
+            }
+            
+            .content {
+                padding: 12px;
+            }
+            
+            .form-group {
+                margin-bottom: 12px;
+            }
+            
+            .checkbox-group {
+                gap: 15px;
+            }
+            
+            .checkbox-item input[type="checkbox"] {
+                width: 20px;
+                height: 20px;
+            }
+            
+            .result-details {
+                grid-template-columns: 1fr;
+                gap: 5px;
+            }
+        }
     </style>
 </head>
 <body>
-
-<div class="container">
-    <h1>📦 运费查询 (修复版)</h1>
-
-    <!-- 这里用于显示代码错误 -->
-    <div id="error-container"></div>
-
-    <label>国家:</label>
-    <input type="text" id="country" placeholder="例如：法国">
-
-    <label>重量 (kg):</label>
-    <input type="number" id="weight" placeholder="例如：1">
-
-    <label>类型:</label>
-    <select id="type">
-        <option value="物品">物品</option>
-        <option value="文件">文件</option>
-    </select>
-
-    <label>是否带电:</label>
-    <select id="power">
-        <option value="否">否</option>
-        <option value="是">是</option>
-    </select>
-
-    <button onclick="queryRates()">🔍 查询运费</button>
-
-    <div id="results"></div>
-    <!-- 调试日志显示区域 -->
-    <div id="debug-log" class="log-box" style="display:none;"></div>
-</div>
-
-<script>
-    // --- 1. 强制初始化变量，防止未定义报错 ---
-    let table1Data = [];
-    let table2Data = [];
-    let table3Data = [];
-    let table4Data = [];
-    let isDataLoaded = false;
-
-    // --- 2. 全局错误捕获 (如果代码崩溃，这里会显示红框) ---
-    window.onerror = function(msg, url, line) {
-        const errDiv = document.getElementById('error-container');
-        errDiv.innerHTML = `<div class="error-box"><strong>代码崩溃了！</strong><br>${msg}<br>第 ${line} 行</div>`;
-        console.error("Global Error:", msg, line);
-        return true;
-    };
-
-    // --- 3. 加载数据 ---
-    window.onload = function() {
-        log("开始加载 CSV 文件...");
+    <div class="container">
+        <header>
+            <h1>国际物流询价</h1>
+            <p class="subtitle">输入货物信息，获取最优报价</p>
+        </header>
         
-        // 注意：这里使用了相对路径，确保 CSV 和 HTML 在同一文件夹
-        const files = ['table1.csv', 'table2.csv', 'table3.csv', 'table4.csv'];
+        <div class="content">
+            <div class="data-status">
+                📁 数据维护：请确保同目录下有 table1.csv, table2.csv, table3.csv, table4.csv
+            </div>
+            
+            <div class="form-group">
+                <label for="country">目的国家/地区</label>
+                <input type="text" id="country" list="countryList" placeholder="输入国家或选择">
+                <datalist id="countryList"></datalist>
+            </div>
+            
+            <div class="form-group">
+                <label for="weight">重量 (kg)</label>
+                <input type="number" id="weight" min="0.1" step="0.1" placeholder="例如：2.5" value="1">
+            </div>
+            
+            <div class="form-group">
+                <label>货物属性</label>
+                <div class="checkbox-group">
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="isFile">
+                        <label for="isFile">文件</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="isElectric">
+                        <label for="isElectric">带电</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>尺寸 (cm) - 留空或填0则忽略尺寸</label>
+                <div class="dimensions">
+                    <input type="number" id="length" min="0" placeholder="长" value="0">
+                    <input type="number" id="width" min="0" placeholder="宽" value="0">
+                    <input type="number" id="height" min="0" placeholder="高" value="0">
+                </div>
+            </div>
+            
+            <button id="queryBtn">查询报价</button>
+            
+            <div class="debug-info">
+                <h3>🔍 调试信息</h3>
+                <p>• 打开开发者工具(F12)查看匹配过程</p>
+                <p>• table3/table4：强制计泡(÷5000)</p>
+                <p>• 尺寸为0时：忽略尺寸及体积因素</p>
+            </div>
+        </div>
         
-        Promise.all(files.map(file => 
-            fetch(file)
-                .then(res => {
-                    if (!res.ok) throw new Error(`${file} 找不到 (404)`);
-                    return res.text();
-                })
-                .then(text => {
-                    const parsed = Papa.parse(text, { header: true }).data;
-                    log(`✅ ${file} 加载成功，共 ${parsed.length} 行`);
-                    return parsed;
-                })
-        )).then(results => {
-            table1Data = results[0];
-            table2Data = results[1];
-            table3Data = results[2];
-            table4Data = results[3];
-            isDataLoaded = true;
-            log("🎉 所有数据加载完成！可以查询了。");
-        }).catch(err => {
-            document.getElementById('error-container').innerHTML = `<div class="error-box">❌ 数据加载失败：<br>${err.message}<br>请检查文件名是否正确，且已上传到 GitHub。</div>`;
+        <div class="loading" id="loadingIndicator">
+            <div class="spinner"></div>
+            <p>计算中...</p>
+        </div>
+        
+        <div class="results-container" id="resultsContainer">
+            <div class="no-results">
+                请输入货物信息并点击查询
+            </div>
+        </div>
+        
+        <footer>
+            <p>© 2023 物流询价系统 | 数据仅供参考</p>
+        </footer>
+    </div>
+
+    <script>
+        // ==================== 全局变量 ====================
+        let table1Data = [];
+        let table2Data = [];
+        let table3Data = [];
+        let table4Data = [];
+        let allCountries = [];
+        
+        // ==================== CSV加载函数 ====================
+        async function loadCSVFiles() {
+            console.log('📂 加载CSV文件...');
+            
+            try {
+                const [t1, t2, t3, t4] = await Promise.all([
+                    fetch('table1.csv').then(res => res.text()),
+                    fetch('table2.csv').then(res => res.text()),
+                    fetch('table3.csv').then(res => res.text()),
+                    fetch('table4.csv').then(res => res.text())
+                ]);
+                
+                table1Data = parseCSV(t1);
+                table2Data = parseCSV(t2);
+                table3Data = parseCSV(t3);
+                table4Data = parseCSV(t4);
+                
+                allCountries = [...new Set(table2Data.map(row => row['国家']))].sort();
+                
+                console.log('✅ CSV加载成功！');
+                populateCountryList();
+                
+            } catch (error) {
+                console.error('❌ 加载失败:', error);
+                document.getElementById('resultsContainer').innerHTML = `
+                    <div class="no-results">
+                        <h3>数据加载失败</h3>
+                        <p>请确保CSV文件存在</p>
+                    </div>
+                `;
+            }
+        }
+        
+        // ==================== CSV解析函数 ====================
+        function parseCSV(csvText) {
+            const lines = csvText.trim().split('\n');
+            const headers = lines[0].split(',').map(h => h.trim());
+            const result = [];
+            
+            for (let i = 1; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (!line) continue;
+                
+                const values = [];
+                let current = '';
+                let inQuotes = false;
+                
+                for (let j = 0; j < line.length; j++) {
+                    const char = line[j];
+                    
+                    if (char === '"') {
+                        inQuotes = !inQuotes;
+                    } else if (char === ',' && !inQuotes) {
+                        values.push(current.trim());
+                        current = '';
+                    } else {
+                        current += char;
+                    }
+                }
+                values.push(current.trim());
+                
+                const obj = {};
+                headers.forEach((header, index) => {
+                    obj[header] = values[index] || '';
+                });
+                
+                result.push(obj);
+            }
+            
+            return result;
+        }
+        
+        // ==================== 工具函数 ====================
+        function populateCountryList() {
+            const datalist = document.getElementById('countryList');
+            datalist.innerHTML = '';
+            
+            allCountries.forEach(country => {
+                const option = document.createElement('option');
+                option.value = country;
+                datalist.appendChild(option);
+            });
+        }
+        
+        function calculateDimensions(length, width, height) {
+            const l = parseFloat(length) || 0;
+            const w = parseFloat(width) || 0;
+            const h = parseFloat(height) || 0;
+            
+            const longestSide = Math.max(l, w, h);
+            const girth = longestSide + 2 * (l + w + h - longestSide);
+            const sumOfSides = l + w + h;
+            const volume = l * w * h;
+            
+            return { longestSide, girth, sumOfSides, volume, hasDimensions: l > 0 || w > 0 || h > 0 };
+        }
+        
+        function ceilToHalf(value) {
+            return Math.ceil(value * 2) / 2;
+        }
+        
+        function ceilToInt(value) {
+            return Math.ceil(value);
+        }
+        
+        // ==================== 核心匹配逻辑 ====================
+        function findZoneCode(country) {
+            console.log(`🔍 查找国家: "${country}"`);
+            
+            let countryRow = table2Data.find(row => row['国家'] === country);
+            
+            if (!countryRow) {
+                countryRow = table2Data.find(row => 
+                    row['国家'].includes(country) || country.includes(row['国家'])
+                );
+            }
+            
+            return countryRow ? countryRow['分区'] : null;
+        }
+        
+        function calculateTable1Rate(country, isFile, isElectric, weight, dimensions) {
+            console.log(`\n📋 table1匹配...`);
+            console.log(`   文件: ${isFile ? '是' : '否'}, 带电: ${isElectric ? '是' : '否'}`);
+            
+            const results = [];
+            
+            table1Data.forEach(row => {
+                if (row['国家'] !== country) return;
+                if (row['类型'] !== (isFile ? '文件' : '物品')) return;
+                if (row['是否带电'] !== (isElectric ? '是' : '否')) return;
+                
+                console.log(`✅ 匹配: ${row['渠道']}`);
+                
+                // 检查尺寸限制（如果有尺寸）
+                let chargeableWeight = weight;
+                
+                if (dimensions.hasDimensions) {
+                    const limitLongestSide = parseFloat(row['尺寸限制（最长边不大于）(cm)']) || Infinity;
+                    const limitGirth = parseFloat(row['尺寸限制（围长）(cm)']) || Infinity;
+                    const limitSumOfSides = parseFloat(row['尺寸限制（三边和）(cm)']) || Infinity;
+                    
+                    if (dimensions.longestSide > limitLongestSide) return;
+                    if (dimensions.girth > limitGirth) return;
+                    if (dimensions.sumOfSides > limitSumOfSides) return;
+                    
+                    // 计泡逻辑：有计泡系数且满足计泡条件
+                    const bubbleCondition = parseFloat(row['计泡条件（最长边大于）']) || 0;
+                    const bubbleCoefficient = parseFloat(row['计泡系数']) || 0;
+                    
+                    if (bubbleCoefficient > 0 && dimensions.longestSide > bubbleCondition) {
+                        const volumeWeight = dimensions.volume / bubbleCoefficient;
+                        chargeableWeight = Math.max(volumeWeight, weight);
+                    }
+                }
+                
+                // 重量限制
+                const weightLimit = parseFloat(row['重量限制（kg）']) || Infinity;
+                if (chargeableWeight > weightLimit) return;
+                
+                // 计算运费
+                const handlingFee = parseFloat(row['处理费']) || 0;
+                const firstWeight = parseFloat(row['首重g']) || 0;
+                const firstRate = parseFloat(row['首重资费']) || 0;
+                const additionalWeight = parseFloat(row['续重g']) || 0;
+                const additionalRate = parseFloat(row['续重资费']) || 0;
+                
+                const chargeableWeightG = chargeableWeight * 1000;
+                let additionalTimes = 0;
+                
+                if (chargeableWeightG > firstWeight && additionalWeight > 0) {
+                    additionalTimes = Math.ceil((chargeableWeightG - firstWeight) / additionalWeight);
+                }
+                
+                let totalRate = handlingFee + firstRate + additionalTimes * additionalRate;
+                const discount = parseFloat(row['最低折扣']) || 1;
+                totalRate = totalRate * discount;
+                
+                results.push({
+                    channel: row['渠道'],
+                    rate: totalRate,
+                    details: {
+                        '渠道': row['渠道'],
+                        '计费重': chargeableWeight.toFixed(2) + 'kg',
+                        '总价': '¥' + totalRate.toFixed(2),
+                        '备注': row['备注']
+                    }
+                });
+            });
+            
+            return results;
+        }
+        
+        function calculateTable3Rate(zoneCode, isFile, isElectric, weight, dimensions) {
+            console.log(`\n📋 table3匹配...`);
+            console.log(`   文件: ${isFile ? '是' : '否'}, 带电: ${isElectric ? '是' : '否'}`);
+            
+            const results = [];
+            const roundedWeight = ceilToHalf(weight);
+            
+            // table3/table4 强制计泡：体积÷5000
+            let chargeableWeight = weight;
+            if (dimensions.hasDimensions) {
+                const volumeWeight = dimensions.volume / 5000;
+                chargeableWeight = Math.max(volumeWeight, weight);
+                console.log(`   计泡: ${dimensions.volume} ÷ 5000 = ${volumeWeight.toFixed(2)}kg`);
+                console.log(`   计费重: ${chargeableWeight.toFixed(2)}kg`);
+            }
+            
+            table3Data.forEach(row => {
+                if (row['是否文件'] === (isFile ? '是' : '否') &&
+                    row['是否带电'] === (isElectric ? '是' : '否') &&
+                    parseFloat(row['重量']) === roundedWeight) {
+                    
+                    const rate = parseFloat(row[zoneCode]);
+                    if (rate > 0) {
+                        const finalRate = rate * (dimensions.hasDimensions ? chargeableWeight / roundedWeight : 1);
+                        results.push({
+                            channel: row['渠道'],
+                            rate: finalRate,
+                            details: {
+                                '渠道': row['渠道'],
+                                '重量': roundedWeight + 'kg',
+                                '总价': '¥' + finalRate.toFixed(2),
+                                '备注': row['备注']
+                            }
+                        });
+                    }
+                }
+            });
+            
+            return results;
+        }
+        
+        function calculateTable4Rate(zoneCode, isFile, isElectric, weight, dimensions) {
+            console.log(`\n📋 table4匹配...`);
+            console.log(`   文件: ${isFile ? '是' : '否'}, 带电: ${isElectric ? '是' : '否'}`);
+            
+            const results = [];
+            const roundedWeight = ceilToInt(weight);
+            
+            // table3/table4 强制计泡：体积÷5000
+            let chargeableWeight = weight;
+            if (dimensions.hasDimensions) {
+                const volumeWeight = dimensions.volume / 5000;
+                chargeableWeight = Math.max(volumeWeight, weight);
+            }
+            
+            table4Data.forEach(row => {
+                const startWeight = parseFloat(row['起始重量']);
+                const endWeight = parseFloat(row['结束重量']);
+                
+                if (row['是否文件'] === (isFile ? '物品' : '物品') &&
+                    row['是否带电'] === (isElectric ? '是' : '否') &&
+                    startWeight <= roundedWeight &&
+                    endWeight >= roundedWeight) {
+                    
+                    const ratePerKg = parseFloat(row[zoneCode]);
+                    if (ratePerKg > 0) {
+                        const totalRate = ratePerKg * chargeableWeight;
+                        results.push({
+                            channel: row['渠道'],
+                            rate: totalRate,
+                            details: {
+                                '渠道': row['渠道'],
+                                '重量': chargeableWeight.toFixed(1) + 'kg',
+                                '单价': '¥' + ratePerKg.toFixed(2) + '/kg',
+                                '总价': '¥' + totalRate.toFixed(2),
+                                '备注': row['备注']
+                            }
+                        });
+                    }
+                }
+            });
+            
+            return results;
+        }
+        
+        // ==================== 显示结果 ====================
+        function displayResults(results) {
+            const container = document.getElementById('resultsContainer');
+            
+            if (results.length === 0) {
+                container.innerHTML = '<div class="no-results">未找到符合条件的报价</div>';
+                return;
+            }
+            
+            results.sort((a, b) => a.rate - b.rate);
+            
+            let html = '';
+            results.forEach(result => {
+                html += `
+                <div class="result-card">
+                    <div class="result-header">
+                        <div class="channel-name">${result.channel}</div>
+                        <div class="price">${result.details['总价']}</div>
+                    </div>
+                    <div class="result-details">
+                `;
+                
+                for (const [key, value] of Object.entries(result.details)) {
+                    if (key !== '总价') {
+                        html += `
+                            <div class="detail-item">
+                                <div class="detail-label">${key}</div>
+                                <div class="detail-value">${value}</div>
+                            </div>
+                        `;
+                    }
+                }
+                
+                html += `
+                    </div>
+                </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        // ==================== 主查询函数 ====================
+        function performQuery() {
+            console.clear();
+            console.log('🚀 开始查询...');
+            
+            const country = document.getElementById('country').value.trim();
+            const weight = parseFloat(document.getElementById('weight').value);
+            const isFile = document.getElementById('isFile').checked;
+            const isElectric = document.getElementById('isElectric').checked;
+            const length = document.getElementById('length').value;
+            const width = document.getElementById('width').value;
+            const height = document.getElementById('height').value;
+            
+            console.log(`📦 查询参数:`);
+            console.log(`   国家: ${country}`);
+            console.log(`   重量: ${weight}kg`);
+            console.log(`   文件: ${isFile ? '是' : '否'}`);
+            console.log(`   带电: ${isElectric ? '是' : '否'}`);
+            console.log(`   尺寸: ${length}×${width}×${height}cm`);
+            
+            if (!country) {
+                alert('请输入国家/地区');
+                return;
+            }
+            
+            if (isNaN(weight) || weight <= 0) {
+                alert('请输入有效重量');
+                return;
+            }
+            
+            document.getElementById('loadingIndicator').style.display = 'block';
+            document.getElementById('resultsContainer').innerHTML = '';
+            
+            setTimeout(() => {
+                const dimensions = calculateDimensions(length, width, height);
+                console.log(`📐 有尺寸: ${dimensions.hasDimensions}`);
+                
+                const zoneCode = findZoneCode(country);
+                if (!zoneCode) {
+                    document.getElementById('loadingIndicator').style.display = 'none';
+                    document.getElementById('resultsContainer').innerHTML = '<div class="no-results">未找到该国家的分区信息</div>';
+                    return;
+                }
+                
+                let allResults = [];
+                
+                const table1Results = calculateTable1Rate(country, isFile, isElectric, weight, dimensions);
+                allResults = allResults.concat(table1Results);
+                
+                const table3Results = calculateTable3Rate(zoneCode, isFile, isElectric, weight, dimensions);
+                allResults = allResults.concat(table3Results);
+                
+                const table4Results = calculateTable4Rate(zoneCode, isFile, isElectric, weight, dimensions);
+                allResults = allResults.concat(table4Results);
+                
+                document.getElementById('loadingIndicator').style.display = 'none';
+                displayResults(allResults);
+                
+                console.log(`✅ 完成！找到 ${allResults.length} 个报价`);
+            }, 300);
+        }
+        
+        // ==================== 初始化 ====================
+        document.addEventListener('DOMContentLoaded', function() {
+            loadCSVFiles();
+            
+            document.getElementById('queryBtn').addEventListener('click', performQuery);
+            
+            // 添加点击测试
+            document.getElementById('isFile').addEventListener('change', function() {
+                console.log('文件选项改变:', this.checked);
+            });
+            
+            document.getElementById('isElectric').addEventListener('change', function() {
+                console.log('带电选项改变:', this.checked);
+            });
+            
+            // 默认示例
+            document.getElementById('country').value = '美国';
         });
-    };
-
-    // --- 4. 查询函数 (去掉了 setTimeout，直接运行) ---
-    function queryRates() {
-        // 如果数据没加载完
-        if (!isDataLoaded) {
-            alert("数据还在加载中，请等待几秒钟后再试！");
-            return;
-        }
-
-        // 获取输入值
-        const country = document.getElementById('country').value.trim();
-        const weight = parseFloat(document.getElementById('weight').value);
-        const type = document.getElementById('type').value;
-        const power = document.getElementById('power').value;
-
-        // 基础验证
-        if (!country || isNaN(weight)) {
-            alert("请填写国家和重量！");
-            return;
-        }
-
-        log(`--- 开始查询 ---`);
-        log(`输入: 国家=${country}, 重量=${weight}, 类型=${type}, 带电=${power}`);
-        log(`数据源行数: T1=${table1Data.length}, T2=${table2Data.length}`);
-
-        let results = [];
-
-        try {
-            // --- 测试逻辑：只查 Table 1 ---
-            // 我们遍历前 10 行看看数据结构
-            log("正在检查 Table 1 的前几行数据...");
-            table1Data.slice(0, 5).forEach((row, index) => {
-                log(`第${index+1}行数据:`, row);
-            });
-
-            // 执行查询
-            table1Data.forEach((row, index) => {
-                // 打印每一行的关键列（防止列名写错）
-                // 注意：这里假设你的列名是 "路向", "文件_物品", "是否带电"
-                // 如果你的列名不同，这里会显示 undefined，你就知道要改哪里了
-                const rowCountry = row['路向'] || row['国家'] || row['Destination']; 
-                const rowType = row['文件_物品'] || row['类型'];
-                const rowPower = row['是否带电'] || row['带电'];
-
-                if (index < 5) { // 只打印前5行的匹配尝试
-                     log(`尝试匹配第${index+1}行: CSV国家=${rowCountry}, CSV类型=${rowType}`);
-                }
-
-                // 严格匹配
-                if (rowCountry === country && rowType === type && rowPower === power) {
-                    log(`🎉 匹配成功！第 ${index+1} 行`);
-                    results.push({
-                        channel: row['渠道'] || "未知渠道",
-                        price: "计算中...", // 简化显示
-                        debug: "Matched Table 1"
-                    });
-                }
-            });
-
-        } catch (e) {
-            log("查询过程中发生错误: " + e.message);
-        }
-
-        // 显示结果
-        const resDiv = document.getElementById('results');
-        if (results.length === 0) {
-            resDiv.innerHTML = "<p>未找到匹配项。请查看下方的灰色调试日志，检查列名是否匹配。</p>";
-        } else {
-            resDiv.innerHTML = `<h3>找到 ${results.length} 个结果：</h3>` + 
-                results.map(r => `<div class="result-item"><strong>${r.channel}</strong>: ${r.price}</div>`).join('');
-        }
-    }
-
-    // 简单的日志打印函数，同时输出到页面和控制台
-    function log(msg, obj) {
-        console.log(msg, obj || "");
-        const logDiv = document.getElementById('debug-log');
-        logDiv.style.display = 'block';
-        const entry = document.createElement('div');
-        entry.textContent = "> " + msg + (obj ? " " + JSON.stringify(obj) : "");
-        logDiv.appendChild(entry);
-        logDiv.scrollTop = logDiv.scrollHeight;
-    }
-</script>
-
+    </script>
 </body>
 </html>
