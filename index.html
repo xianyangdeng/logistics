@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>国际物流运费查询系统</title>
+    <title>国际物流运费查询系统 (调试版)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 20px; }
@@ -17,12 +17,12 @@
         .result-item { border: 1px solid #ddd; border-radius: 8px; padding: 15px; margin-bottom: 10px; background: #fff; }
         .result-item h3 { margin-top: 0; color: #2c3e50; }
         .price { font-size: 1.2em; font-weight: bold; color: #e74c3c; }
-        .loading { color: #7f8c8d; font-style: italic; }
+        .debug-log { font-family: monospace; font-size: 12px; color: #666; margin-top: 20px; border-top: 1px solid #eee; padding-top: 10px; white-space: pre-wrap; }
     </style>
 </head>
 <body>
 
-    <h1>📦 国际物流运费查询</h1>
+    <h1>📦 国际物流运费查询 (调试模式)</h1>
     
     <div class="form-container">
         <label for="country">国家:</label>
@@ -56,6 +56,7 @@
     </div>
 
     <div id="results">请输入信息并点击查询以获取报价。</div>
+    <div id="debugConsole" class="debug-log"></div>
 
     <script>
         // 全局变量存储CSV数据
@@ -72,14 +73,24 @@
                 fetch('table3.csv').then(r => r.text()).then(data => { table3Data = Papa.parse(data, {header: true}).data; }),
                 fetch('table4.csv').then(r => r.text()).then(data => { table4Data = Papa.parse(data, {header: true}).data; })
             ]).then(() => {
-                console.log("所有数据加载完成");
+                logDebug("✅ 所有CSV数据加载完成");
             }).catch(err => {
                 console.error('数据加载失败:', err);
                 document.getElementById('results').innerHTML = "<p style='color:red'>数据文件加载失败，请检查CSV文件路径。</p>";
             });
         };
 
+        // 简单的日志打印函数，既打印到控制台也显示在页面上
+        function logDebug(msg) {
+            console.log(msg);
+            const debugDiv = document.getElementById('debugConsole');
+            debugDiv.innerHTML += msg + "\n";
+        }
+
         function queryRates() {
+            // 清空上一次日志
+            document.getElementById('debugConsole').innerHTML = "--- 开始新查询 ---\n";
+            
             const country = document.getElementById('country').value.trim();
             const weightKg = parseFloat(document.getElementById('weight').value);
             const type = document.getElementById('type').value;
@@ -87,6 +98,8 @@
             const length = parseFloat(document.getElementById('length').value) || 0;
             const width = parseFloat(document.getElementById('width').value) || 0;
             const height = parseFloat(document.getElementById('height').value) || 0;
+
+            logDebug(`🔍 用户输入: 国家=[${country}], 重量=[${weightKg}], 类型=[${type}], 带电=[${power}]`);
 
             if (!country || isNaN(weightKg)) {
                 alert("请填写完整的国家和重量信息！");
@@ -99,10 +112,17 @@
             // 模拟异步加载完成后的处理
             setTimeout(() => {
                 try {
-                    // --- 逻辑1: 处理 Table1 (标准EMS, e特快等) ---
+                    // --- 逻辑1: 处理 Table1 ---
+                    logDebug("🚀 开始处理 Table 1...");
                     if (table1Data) {
-                        table1Data.forEach(row => {
+                        let t1Count = 0;
+                        table1Data.forEach((row, index) => {
+                            // 检查表头是否正确，如果读取失败可以在此处发现
+                            if(index === 0) logDebug(`Table1 第一行表头示例: ${JSON.stringify(Object.keys(row))}`);
+
+                            // 严格匹配
                             if (row.路向 === country && row.文件_物品 === type && row.是否带电 === power) {
+                                t1Count++;
                                 let weightG = weightKg * 1000;
                                 let fee = parseFloat(row.处理费) || 0;
                                 let firstWeight = parseFloat(row.首重_g_) || 0;
@@ -110,10 +130,11 @@
                                 let contWeight = parseFloat(row.续重_g_) || 1;
                                 let contPrice = parseFloat(row.续重资费) || 0;
 
-                                // 计算公式：处理费+向上取整（（重量*1000-首重）/续重）*续重资费+首重资费
                                 let excessWeight = Math.max(0, weightG - firstWeight);
                                 let contCount = Math.ceil(excessWeight / contWeight);
                                 let totalPrice = fee + firstPrice + (contCount * contPrice);
+
+                                logDebug(`✅ Table1 匹配成功 (第${index+1}行): 渠道=${row.渠道}, 计算价格=${totalPrice.toFixed(2)}`);
 
                                 results.push({
                                     channel: row.渠道,
@@ -123,31 +144,43 @@
                                 });
                             }
                         });
+                        if(t1Count === 0) logDebug("❌ Table1 未找到任何匹配行 (检查国家、文件类型、是否带电是否完全一致)");
                     }
 
-                    // --- 逻辑2 & 3: 处理 Table2, Table3, Table4 (中速联邦系列) ---
+                    // --- 逻辑2 & 3 & 4: 处理 Table2, 3, 4 ---
                     let zoneCode = null;
                     if (table2Data) {
                         const countryRow = table2Data.find(row => row.国家 === country);
                         if (countryRow) {
                             zoneCode = countryRow.分区;
+                            logDebug(`✅ Table2 找到国家 [${country}]，对应分区代码: [${zoneCode}]`);
+                        } else {
+                            logDebug(`❌ Table2 未找到国家 [${country}]，请检查Table2中的国家名称`);
                         }
                     }
 
                     if (zoneCode && table3Data) {
-                        // 获取表头映射 (Table3 第1行 5-30列对应 A-Z)
                         const headers = Object.keys(table3Data[0]);
-                        const zoneColIndex = headers.indexOf(zoneCode); // 找到分区代码对应的列索引
-
+                        const zoneColIndex = headers.indexOf(zoneCode);
+                        
                         if (zoneColIndex > -1) {
+                            logDebug(`Table3 找到分区列索引: ${zoneColIndex} (列名: ${headers[zoneColIndex]})`);
+                            
                             // 逻辑3: Table3 处理 (重量为0.5的倍数取整)
-                            const weight05 = Math.ceil(weightKg * 2) / 2; // 向上0.5取整
+                            const weight05 = Math.ceil(weightKg * 2) / 2; 
+                            logDebug(`Table3 目标计算重量 (向上0.5取整): ${weight05}`);
+
                             table3Data.forEach(row => {
+                                // 调试：打印前几行的关键匹配字段，确认数据读取是否正确
+                                // if(results.length < 5) console.log(`Table3检查行: ${row.渠道}, 文件:${row.是否文件}, 带电:${row.是否带电}, 重量列:${row.重量}`);
+
                                 if (row.是否文件 === type && 
                                     row.是否带电 === power && 
                                     parseFloat(row.重量) === weight05) {
                                     
                                     const price = row[headers[zoneColIndex]];
+                                    logDebug(`✅ Table3 匹配成功: 渠道=${row.渠道}, 价格=${price}`);
+                                    
                                     if (price && !isNaN(price)) {
                                         results.push({
                                             channel: row.渠道,
@@ -158,20 +191,24 @@
                                     }
                                 }
                             });
+                        } else {
+                            logDebug(`❌ Table3 表头中未找到分区代码 [${zoneCode}]`);
                         }
                     }
 
                     if (zoneCode && table4Data) {
-                        // 获取表头映射 (Table4 第1行 6-31列对应 A-Z)
                         const headers = Object.keys(table4Data[0]);
+                        // 注意：Table4 的列索引逻辑可能需要根据实际 CSV 调整，这里假设也是直接通过表头找
                         const zoneColIndex = headers.indexOf(zoneCode); 
 
                         if (zoneColIndex > -1) {
-                            // 逻辑4: Table4 处理 (重量区间匹配)
-                            const weight1 = Math.ceil(weightKg); // 向上1取整
+                            const weight1 = Math.ceil(weightKg); 
+                            logDebug(`Table4 目标计算重量 (向上1取整): ${weight1}`);
+
                             table4Data.forEach(row => {
                                 const startWeight = parseInt(row.起始重量);
                                 const endWeight = parseInt(row.结束重量);
+                                
                                 if (row.是否文件 === type && 
                                     row.是否带电 === power && 
                                     weight1 >= startWeight && 
@@ -179,8 +216,9 @@
                                     
                                     const basePrice = row[headers[zoneColIndex]];
                                     if (basePrice && !isNaN(basePrice)) {
-                                        // 价格 * 向上1取整(重量)
                                         const totalPrice = (parseFloat(basePrice) * weight1).toFixed(2);
+                                        logDebug(`✅ Table4 匹配成功: 渠道=${row.渠道}, 单价=${basePrice}, 总价=${totalPrice}`);
+                                        
                                         results.push({
                                             channel: row.渠道,
                                             price: totalPrice,
@@ -193,7 +231,6 @@
                         }
                     }
 
-                    // 显示结果
                     displayResults(results);
                 } catch (e) {
                     console.error(e);
@@ -205,15 +242,15 @@
         function displayResults(results) {
             const resultsDiv = document.getElementById('results');
             if (results.length === 0) {
-                resultsDiv.innerHTML = "<p>未找到符合条件的报价。请检查输入的国家或参数是否正确。</p>";
+                resultsDiv.innerHTML = "<p style='color:red'>❌ 未找到符合条件的报价。请查看下方调试日志寻找原因。</p>";
                 return;
             }
 
-            let html = `<p>共找到 ${results.length} 个报价方案：</p>`;
+            let html = `<p style='color:green'>✅ 共找到 ${results.length} 个报价方案：</p>`;
             results.forEach(res => {
                 html += `
                 <div class="result-item">
-                    <h3>${res.channel}</h3>
+                    <h3>${res.channel} <small style="color:#999">(${res.source})</small></h3>
                     <p><strong>运费:</strong> <span class="price">¥${res.price}</span></p>
                     <p><strong>备注:</strong> ${res.remark}</p>
                 </div>
