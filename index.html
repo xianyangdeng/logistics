@@ -57,7 +57,7 @@
         t3: { type: "是否文件", power: "是否带电", weight: "重量", channel: "渠道", remark: "备注" },
         t4: { type: "是否文件", power: "是否带电", startW: "起始重量", endW: "结束重量", channel: "渠道", remark: "备注" }
     };
-    console.log(‘123’);
+
     let data = { t1: [], t2: [], t3: [], t4: [] };
     const log = (msg) => {
         const el = document.getElementById('debug-console');
@@ -89,10 +89,8 @@
 
     // === 3. 查询主逻辑 ===
     function runQuery() {
-        
         document.getElementById('debug-console').innerHTML = ""; // 清空旧日志
         document.getElementById('output').innerHTML = "";
-        console.log(‘123’);
         log("=== 开始查询 ===");
 
         try {
