@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>中山邮政国际物流询价</title>
+    
+    <!-- 网页图标设置 -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='grad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%231a6dcc'/%3E%3Cstop offset='100%25' stop-color='%232c9ce0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='15' fill='url(%23grad)'/%3E%3Ccircle cx='50' cy='50' r='35' fill='%23ffffff' fill-opacity='0.1'/%3E%3Cpath d='M50 20 Q60 30 50 40 Q40 50 50 60 Q60 70 50 80' stroke='%23ffffff' stroke-width='3' fill='none' stroke-linecap='round'/%3E%3Ctext x='50' y='55' font-family='Arial, sans-serif' font-size='24' font-weight='bold' fill='%23ffffff' text-anchor='middle'%3E中山%3C/text%3E%3Ccircle cx='30' cy='30' r='2' fill='%23ffffff' fill-opacity='0.6'/%3E%3Ccircle cx='70' cy='30' r='2' fill='%23ffffff' fill-opacity='0.6'/%3E%3Ccircle cx='30' cy='70' r='2' fill='%23ffffff' fill-opacity='0.6'/%3E%3Ccircle cx='70' cy='70' r='2' fill='%23ffffff' fill-opacity='0.6'/%3E%3C/svg%3E">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='grad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%231a6dcc'/%3E%3Cstop offset='100%25' stop-color='%232c9ce0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='15' fill='url(%23grad)'/%3E%3Ccircle cx='50' cy='50' r='35' fill='%23ffffff' fill-opacity='0.1'/%3E%3Cpath d='M50 20 Q60 30 50 40 Q40 50 50 60 Q60 70 50 80' stroke='%23ffffff' stroke-width='3' fill='none' stroke-linecap='round'/%3E%3Ctext x='50' y='55' font-family='Arial, sans-serif' font-size='24' font-weight='bold' fill='%23ffffff' text-anchor='middle'%3E中山%3C/text%3E%3Ccircle cx='30' cy='30' r='2' fill='%23ffffff' fill-opacity='0.6'/%3E%3Ccircle cx='70' cy='30' r='2' fill='%23ffffff' fill-opacity='0.6'/%3E%3Ccircle cx='30' cy='70' r='2' fill='%23ffffff' fill-opacity='0.6'/%3E%3Ccircle cx='70' cy='70' r='2' fill='%23ffffff' fill-opacity='0.6'/%3E%3C/svg%3E">
+    
     <style>
         * {
             box-sizing: border-box;
@@ -60,12 +65,30 @@
             color: white;
             padding: 12px;
             text-align: center;
+            position: relative;
+        }
+        
+        /* 头部图标样式 */
+        .header-icon {
+            width: 32px;
+            height: 32px;
+            margin-right: 8px;
+            vertical-align: middle;
+            border-radius: 6px;
+            background: linear-gradient(135deg, #1a6dcc 0%, #2c9ce0 100%);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
         }
         
         h1 {
             font-size: 18px;
             margin-bottom: 4px;
             font-weight: 600;
+            display: inline-block;
         }
         
         .subtitle {
@@ -347,6 +370,7 @@
     
     <div class="container">
         <header>
+            <div class="header-icon">中山</div>
             <h1>中山邮政国际物流询价</h1>
             <p class="subtitle">输入货物信息，获取最优报价</p>
         </header>
