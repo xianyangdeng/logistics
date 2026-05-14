@@ -16,60 +16,85 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             background-color: #f8f9fa;
             color: #333;
-            line-height: 1.5;
-            padding: 10px;
+            line-height: 1.4;
+            padding: 8px;
             min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        /* 水印样式 */
+        .watermark {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0.36; /* 透明度87% */
+            transform: rotate(45deg);
+            transform-origin: center;
+            font-size: 50px;
+            font-weight: bold;
+            color: #cccccc;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            white-space: nowrap;
         }
         
         .container {
             max-width: 100%;
             background-color: white;
-            border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
             overflow: hidden;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
+            position: relative;
+            z-index: 1;
         }
         
         header {
             background: linear-gradient(135deg, #1a6dcc 0%, #2c9ce0 100%);
             color: white;
-            padding: 15px;
+            padding: 12px;
             text-align: center;
         }
         
         h1 {
-            font-size: 20px;
-            margin-bottom: 5px;
+            font-size: 18px;
+            margin-bottom: 4px;
             font-weight: 600;
         }
         
         .subtitle {
-            font-size: 13px;
+            font-size: 12px;
             opacity: 0.9;
         }
         
         .content {
-            padding: 15px;
+            padding: 12px;
         }
         
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 12px;
         }
         
         label {
             display: block;
-            margin-bottom: 6px;
+            margin-bottom: 5px;
             font-weight: 600;
             color: #444;
-            font-size: 14px;
+            font-size: 13px;
         }
         
         input, select {
             width: 100%;
-            padding: 12px 10px;
+            padding: 10px 8px;
             border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 16px;
+            border-radius: 6px;
+            font-size: 15px;
             background-color: #fff;
             -webkit-appearance: none;
         }
@@ -77,7 +102,7 @@
         .dimensions {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 8px;
+            gap: 6px;
         }
         
         .dimensions input {
@@ -86,21 +111,21 @@
         
         .checkbox-group {
             display: flex;
-            gap: 20px;
+            gap: 15px;
             margin-top: 5px;
-            padding: 10px 0;
+            padding: 8px 0;
         }
         
         .checkbox-item {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
         }
         
         .checkbox-item input[type="checkbox"] {
             position: relative;
-            width: 24px;
-            height: 24px;
+            width: 22px;
+            height: 22px;
             margin: 0;
             cursor: pointer;
             appearance: none;
@@ -122,8 +147,8 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%) rotate(45deg);
-            width: 6px;
-            height: 12px;
+            width: 5px;
+            height: 10px;
             border: solid white;
             border-width: 0 2px 2px 0;
         }
@@ -131,7 +156,7 @@
         .checkbox-item label {
             margin-bottom: 0;
             font-weight: normal;
-            font-size: 14px;
+            font-size: 13px;
             cursor: pointer;
             user-select: none;
             color: #333;
@@ -141,13 +166,13 @@
             background: linear-gradient(135deg, #1a6dcc 0%, #2c9ce0 100%);
             color: white;
             border: none;
-            padding: 14px;
-            font-size: 16px;
+            padding: 12px;
+            font-size: 15px;
             font-weight: 600;
-            border-radius: 8px;
+            border-radius: 6px;
             cursor: pointer;
             width: 100%;
-            margin-top: 10px;
+            margin-top: 8px;
             transition: all 0.2s;
         }
         
@@ -157,7 +182,7 @@
         
         .loading {
             text-align: center;
-            padding: 20px;
+            padding: 15px;
             color: #666;
             display: none;
         }
@@ -166,10 +191,10 @@
             border: 3px solid rgba(0, 0, 0, 0.1);
             border-radius: 50%;
             border-top: 3px solid #2c9ce0;
-            width: 30px;
-            height: 30px;
+            width: 25px;
+            height: 25px;
             animation: spin 1s linear infinite;
-            margin: 0 auto 10px;
+            margin: 0 auto 8px;
         }
         
         @keyframes spin {
@@ -178,110 +203,97 @@
         }
         
         .results-container {
-            margin-top: 15px;
+            margin-top: 12px;
         }
         
         .result-card {
             background-color: #fff;
-            border-radius: 8px;
-            padding: 12px;
-            margin-bottom: 10px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-            border-left: 4px solid #2c9ce0;
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 8px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+            border-left: 3px solid #2c9ce0;
         }
         
         .result-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 8px;
-            padding-bottom: 8px;
+            margin-bottom: 6px;
+            padding-bottom: 6px;
             border-bottom: 1px dashed #eee;
         }
         
         .channel-name {
             font-weight: 600;
-            font-size: 15px;
+            font-size: 14px;
             color: #1a6dcc;
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
         
         .price {
             font-weight: 700;
-            font-size: 18px;
+            font-size: 16px;
             color: #e74c3c;
+            margin-left: 8px;
         }
         
         .result-details {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 8px;
-            font-size: 13px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            font-size: 11px;
         }
         
         .detail-item {
-            padding: 5px 0;
+            width: calc(50% - 2px);
+            padding: 2px 0;
+            display: flex;
+            justify-content: space-between;
         }
         
         .detail-label {
             color: #777;
-            font-size: 12px;
-            margin-bottom: 2px;
+            font-size: 11px;
         }
         
         .detail-value {
             font-weight: 600;
             color: #333;
+            text-align: right;
+            max-width: 70%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
         
-        .discount-badge {
-            display: inline-block;
-            background-color: #e74c3c;
-            color: white;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 11px;
-            font-weight: bold;
-            margin-left: 5px;
+        .no-discount {
+            color: #999;
+            font-style: italic;
         }
         
         .no-results {
             text-align: center;
-            padding: 30px 15px;
+            padding: 20px 10px;
             color: #888;
-            font-size: 14px;
+            font-size: 13px;
         }
         
-        .debug-info {
-            background-color: #f0f7ff;
-            padding: 10px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            font-size: 12px;
-        }
-        
-        .debug-info h3 {
-            color: #1a6dcc;
-            margin-bottom: 5px;
-            font-size: 14px;
-        }
-        
-        .data-status {
-            background-color: #fff3cd;
-            padding: 10px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            font-size: 12px;
-            color: #856404;
-            border-left: 4px solid #ffc107;
+        /* 隐藏data-status和debug-info */
+        .data-status, .debug-info {
+            display: none !important;
         }
         
         footer {
             text-align: center;
-            padding: 10px;
+            padding: 8px;
             color: #777;
-            font-size: 12px;
+            font-size: 11px;
             border-top: 1px solid #eee;
-            margin-top: 10px;
+            margin-top: 8px;
         }
         
         /* 移动端优化 */
@@ -295,41 +307,47 @@
             }
             
             header {
-                padding: 12px;
+                padding: 10px;
             }
             
             h1 {
-                font-size: 18px;
+                font-size: 16px;
             }
             
             .content {
-                padding: 12px;
+                padding: 10px;
             }
             
             .form-group {
-                margin-bottom: 12px;
+                margin-bottom: 10px;
             }
             
             .checkbox-group {
-                gap: 15px;
+                gap: 12px;
             }
             
             .checkbox-item input[type="checkbox"] {
-                width: 22px;
-                height: 22px;
+                width: 20px;
+                height: 20px;
             }
             
             .result-details {
-                grid-template-columns: 1fr;
-                gap: 5px;
+                gap: 3px;
+            }
+            
+            .detail-item {
+                width: calc(50% - 1.5px);
             }
         }
     </style>
 </head>
 <body>
+    <!-- 水印 -->
+    <div class="watermark" id="watermark"></div>
+    
     <div class="container">
         <header>
-            <h1>国际物流询价</h1>
+            <h1>中山邮政国际物流询价</h1>
             <p class="subtitle">输入货物信息，获取最优报价</p>
         </header>
         
@@ -377,8 +395,9 @@
             <div class="debug-info">
                 <h3>🔍 调试信息</h3>
                 <p>• 打开开发者工具(F12)查看匹配过程</p>
-                <p>• table3/table4：强制计泡(÷5000)</p>
+                <p>• table3/table4：强制计泡(÷5000)，用计费重匹配</p>
                 <p>• 尺寸为0时：忽略尺寸及体积因素</p>
+                <p>• 营销费：table2中"营销费"列，不足1kg按1kg算</p>
             </div>
         </div>
         
@@ -394,7 +413,7 @@
         </div>
         
         <footer>
-            <p>© 2023 物流询价系统 | 数据仅供参考</p>
+            <p>© 2026 物流询价系统 | 数据仅供参考</p>
         </footer>
     </div>
 
@@ -405,6 +424,19 @@
         let table3Data = [];
         let table4Data = [];
         let allCountries = [];
+        
+        // ==================== 设置水印 ====================
+        function setWatermark() {
+            const watermarkElement = document.getElementById('watermark');
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const dateStr = `${year}-${month}-${day}`;
+            
+            watermarkElement.textContent = dateStr;
+            console.log(`🎨 设置水印: ${dateStr}, 透明度: 87%`);
+        }
         
         // ==================== CSV加载函数 ====================
         async function loadCSVFiles() {
@@ -426,7 +458,7 @@
                 allCountries = [...new Set(table2Data.map(row => row['国家']))].sort();
                 
                 console.log('✅ CSV加载成功！');
-                console.log('📊 table3数据示例:', table3Data.slice(0, 3));
+                console.log('📊 table2数据示例:', table2Data.slice(0, 3));
                 populateCountryList();
                 
             } catch (error) {
@@ -513,7 +545,7 @@
         }
         
         // ==================== 核心匹配逻辑 ====================
-        function findZoneCode(country) {
+        function findZoneInfo(country) {
             console.log(`🔍 查找国家: "${country}"`);
             
             let countryRow = table2Data.find(row => row['国家'] === country);
@@ -524,7 +556,15 @@
                 );
             }
             
-            return countryRow ? countryRow['分区'] : null;
+            if (countryRow) {
+                const zoneCode = countryRow['分区'];
+                const marketingFee = parseFloat(countryRow['营销费']) || 0;
+                console.log(`   ✅ 找到分区: ${zoneCode}, 营销费: ¥${marketingFee}/kg`);
+                return { zoneCode, marketingFee };
+            } else {
+                console.log(`   ❌ 未找到该国家的分区信息`);
+                return null;
+            }
         }
         
         function calculateTable1Rate(country, isFile, isElectric, weight, dimensions) {
@@ -584,8 +624,8 @@
                 const discount = parseFloat(row['最低折扣']) || 1;
                 totalRate = totalRate * discount;
                 
-                // 格式化折扣显示
-                const discountText = discount < 1 ? `(${(discount * 10).toFixed(1)}折)` : '';
+                // 折扣显示：无折扣时显示"无折扣"
+                const discountText = discount < 1 ? `(${(discount * 10).toFixed(1)}折)` : '无折扣';
                 
                 results.push({
                     channel: row['渠道'],
@@ -604,13 +644,16 @@
             return results;
         }
         
-        function calculateTable3Rate(zoneCode, isFile, isElectric, weight, dimensions) {
+        function calculateTable3Rate(zoneInfo, isFile, isElectric, weight, dimensions) {
+            const zoneCode = zoneInfo.zoneCode;
+            const marketingFee = zoneInfo.marketingFee;
+            
             console.log(`\n📋 table3匹配...`);
             console.log(`   文件: ${isFile ? '是' : '否'}, 带电: ${isElectric ? '是' : '否'}`);
+            console.log(`   营销费: ¥${marketingFee}/kg`);
             console.log(`   table3数据总行数: ${table3Data.length}`);
             
             const results = [];
-            const roundedWeight = ceilToHalf(weight);
             
             // table3/table4 强制计泡：体积÷5000
             let chargeableWeight = weight;
@@ -621,7 +664,15 @@
                 console.log(`   计费重: ${chargeableWeight.toFixed(2)}kg`);
             }
             
-            // 修复文件匹配逻辑：确保正确匹配"是否文件"列
+            // 使用计费重进行匹配（向上取整到0.5kg）
+            const matchWeight = ceilToHalf(chargeableWeight);
+            console.log(`   匹配重量: ${matchWeight}kg (计费重向上取整到0.5kg)`);
+            
+            // 计算营销费（不足1kg按1kg算）
+            const marketingWeight = Math.ceil(chargeableWeight);
+            const marketingCost = marketingFee * marketingWeight;
+            console.log(`   营销费: ${marketingWeight}kg × ¥${marketingFee} = ¥${marketingCost}`);
+            
             table3Data.forEach((row, index) => {
                 const rowIsFile = row['是否文件'];
                 const expectedIsFile = isFile ? '是' : '否';
@@ -638,8 +689,9 @@
                     return;
                 }
                 
-                if (parseFloat(row['重量']) !== roundedWeight) {
-                    console.log(`   ❌ 重量不匹配: ${row['重量']} ≠ ${roundedWeight}`);
+                // 使用计费重匹配，而不是实际重量
+                if (parseFloat(row['重量']) !== matchWeight) {
+                    console.log(`   ❌ 重量不匹配: ${row['重量']} ≠ ${matchWeight}`);
                     return;
                 }
                 
@@ -647,15 +699,16 @@
                 
                 const rate = parseFloat(row[zoneCode]);
                 if (rate > 0) {
-                    const finalRate = rate * (dimensions.hasDimensions ? chargeableWeight / roundedWeight : 1);
+                    const baseRate = rate * (dimensions.hasDimensions ? chargeableWeight / matchWeight : 1);
+                    const totalRate = baseRate + marketingCost;
+                    
                     results.push({
                         channel: row['渠道'],
-                        rate: finalRate,
+                        rate: totalRate,
                         details: {
                             '渠道': row['渠道'],
-                            '重量': roundedWeight + 'kg',
-                            '单价': '¥' + rate.toFixed(2) + '/kg',
-                            '总价': '¥' + finalRate.toFixed(2),
+                            '计费重': chargeableWeight.toFixed(2) + 'kg',
+                            '总价': '¥' + totalRate.toFixed(2),
                             '备注': row['备注']
                         }
                     });
@@ -666,45 +719,90 @@
             return results;
         }
         
-        function calculateTable4Rate(zoneCode, isFile, isElectric, weight, dimensions) {
+        function calculateTable4Rate(zoneInfo, isFile, isElectric, weight, dimensions) {
+            const zoneCode = zoneInfo.zoneCode;
+            const marketingFee = zoneInfo.marketingFee;
+            
             console.log(`\n📋 table4匹配...`);
             console.log(`   文件: ${isFile ? '是' : '否'}, 带电: ${isElectric ? '是' : '否'}`);
+            console.log(`   营销费: ¥${marketingFee}/kg`);
+            console.log(`   table4数据总行数: ${table4Data.length}`);
             
             const results = [];
-            const roundedWeight = ceilToInt(weight);
             
             // table3/table4 强制计泡：体积÷5000
             let chargeableWeight = weight;
             if (dimensions.hasDimensions) {
                 const volumeWeight = dimensions.volume / 5000;
                 chargeableWeight = Math.max(volumeWeight, weight);
+                console.log(`   计泡: ${dimensions.volume} ÷ 5000 = ${volumeWeight.toFixed(2)}kg`);
+                console.log(`   计费重: ${chargeableWeight.toFixed(2)}kg`);
             }
             
-            table4Data.forEach(row => {
+            // 使用计费重进行匹配（向上取整到整数kg）
+            const matchWeight = ceilToInt(chargeableWeight);
+            console.log(`   匹配重量: ${matchWeight}kg (计费重向上取整到整数)`);
+            
+            // 计算营销费（不足1kg按1kg算）
+            const marketingWeight = Math.ceil(chargeableWeight);
+            const marketingCost = marketingFee * marketingWeight;
+            console.log(`   营销费: ${marketingWeight}kg × ¥${marketingFee} = ¥${marketingCost}`);
+            
+            table4Data.forEach((row, index) => {
                 const startWeight = parseFloat(row['起始重量']);
                 const endWeight = parseFloat(row['结束重量']);
+                const rowIsFile = row['是否文件'];
+                const rowIsElectric = row['是否带电'];
                 
-                if (row['是否文件'] !== (isFile ? '物品' : '物品')) return;
-                if (row['是否带电'] !== (isElectric ? '是' : '否')) return;
-                if (startWeight > roundedWeight || endWeight < roundedWeight) return;
+                console.log(`\n   检查第${index + 1}行: ${row['渠道']}`);
+                console.log(`      起始重量: ${startWeight}kg, 结束重量: ${endWeight}kg`);
+                console.log(`      是否文件: "${rowIsFile}", 期望: "${isFile ? '物品' : '物品'}"`);
+                console.log(`      是否带电: "${rowIsElectric}", 期望: "${isElectric ? '是' : '否'}"`);
+                
+                // 检查文件类型
+                const expectedFileType = isFile ? '物品' : '物品';
+                if (rowIsFile !== expectedFileType) {
+                    console.log(`      ❌ 文件类型不匹配: ${rowIsFile} ≠ ${expectedFileType}`);
+                    return;
+                }
+                
+                // 检查带电类型
+                const expectedElectricType = isElectric ? '是' : '否';
+                if (rowIsElectric !== expectedElectricType) {
+                    console.log(`      ❌ 带电类型不匹配: ${rowIsElectric} ≠ ${expectedElectricType}`);
+                    return;
+                }
+                
+                // 使用计费重匹配重量区间
+                if (startWeight > matchWeight || endWeight < matchWeight) {
+                    console.log(`      ❌ 重量不在范围内: ${matchWeight}kg 不在 ${startWeight}-${endWeight}kg 之间`);
+                    return;
+                }
+                
+                console.log(`      ✅ 所有条件匹配成功！`);
                 
                 const ratePerKg = parseFloat(row[zoneCode]);
                 if (ratePerKg > 0) {
-                    const totalRate = ratePerKg * chargeableWeight;
+                    const baseRate = ratePerKg * chargeableWeight;
+                    const totalRate = baseRate + marketingCost;
+                    
                     results.push({
                         channel: row['渠道'],
                         rate: totalRate,
                         details: {
                             '渠道': row['渠道'],
-                            '重量': chargeableWeight.toFixed(1) + 'kg',
-                            '单价': '¥' + ratePerKg.toFixed(2) + '/kg',
+                            '计费重': chargeableWeight.toFixed(1) + 'kg',
                             '总价': '¥' + totalRate.toFixed(2),
                             '备注': row['备注']
                         }
                     });
+                    console.log(`      添加结果: ${row['渠道']} - ¥${totalRate.toFixed(2)}`);
+                } else {
+                    console.log(`      ❌ 费率无效: ${ratePerKg}`);
                 }
             });
             
+            console.log(`   table4匹配结果: ${results.length}个`);
             return results;
         }
         
@@ -730,17 +828,20 @@
                     <div class="result-details">
                 `;
                 
-                for (const [key, value] of Object.entries(result.details)) {
-                    if (key !== '总价') {
-                        const isDiscount = key === '折扣' && value;
-                        html += `
-                            <div class="detail-item">
-                                <div class="detail-label">${key}</div>
-                                <div class="detail-value ${isDiscount ? 'discount-value' : ''}">${value}</div>
-                            </div>
-                        `;
-                    }
-                }
+                // 只显示前4个关键信息，确保不超过2行
+                const detailKeys = Object.keys(result.details).filter(key => key !== '总价');
+                const displayKeys = detailKeys.slice(0, 4); // 最多显示4个项目
+                
+                displayKeys.forEach(key => {
+                    const value = result.details[key];
+                    const isNoDiscount = key === '折扣' && value === '无折扣';
+                    html += `
+                        <div class="detail-item">
+                            <span class="detail-label">${key}</span>
+                            <span class="detail-value ${isNoDiscount ? 'no-discount' : ''}">${value}</span>
+                        </div>
+                    `;
+                });
                 
                 html += `
                     </div>
@@ -788,8 +889,8 @@
                 const dimensions = calculateDimensions(length, width, height);
                 console.log(`📐 有尺寸: ${dimensions.hasDimensions}`);
                 
-                const zoneCode = findZoneCode(country);
-                if (!zoneCode) {
+                const zoneInfo = findZoneInfo(country);
+                if (!zoneInfo) {
                     document.getElementById('loadingIndicator').style.display = 'none';
                     document.getElementById('resultsContainer').innerHTML = '<div class="no-results">未找到该国家的分区信息</div>';
                     return;
@@ -800,10 +901,10 @@
                 const table1Results = calculateTable1Rate(country, isFile, isElectric, weight, dimensions);
                 allResults = allResults.concat(table1Results);
                 
-                const table3Results = calculateTable3Rate(zoneCode, isFile, isElectric, weight, dimensions);
+                const table3Results = calculateTable3Rate(zoneInfo, isFile, isElectric, weight, dimensions);
                 allResults = allResults.concat(table3Results);
                 
-                const table4Results = calculateTable4Rate(zoneCode, isFile, isElectric, weight, dimensions);
+                const table4Results = calculateTable4Rate(zoneInfo, isFile, isElectric, weight, dimensions);
                 allResults = allResults.concat(table4Results);
                 
                 document.getElementById('loadingIndicator').style.display = 'none';
@@ -815,6 +916,9 @@
         
         // ==================== 初始化 ====================
         document.addEventListener('DOMContentLoaded', function() {
+            // 设置水印
+            setWatermark();
+            
             loadCSVFiles();
             
             document.getElementById('queryBtn').addEventListener('click', performQuery);
