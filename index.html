@@ -32,7 +32,7 @@
             height: 100%;
             pointer-events: none;
             z-index: 9999;
-            opacity: 0.20; /* 透明度87% */
+            opacity: 0.20;
             transform: rotate(45deg);
             transform-origin: center;
             font-size: 50px;
@@ -576,7 +576,13 @@
             table1Data.forEach(row => {
                 if (row['国家'] !== country) return;
                 if (row['类型'] !== (isFile ? '文件' : '物品')) return;
-                if (row['是否带电'] !== (isElectric ? '是' : '否')) return;
+                
+                // 优化带电逻辑：如果选择了不带电，带电的渠道也显示
+                if (isElectric && row['是否带电'] !== '是') {
+                    console.log(`   ❌ 带电类型不匹配: ${row['是否带电']} ≠ 是`);
+                    return;
+                }
+                // 如果选择了不带电(isElectric=false)，则不管row['是否带电']是'是'还是'否'都匹配
                 
                 console.log(`✅ 匹配: ${row['渠道']}`);
                 
@@ -631,7 +637,7 @@
                     channel: row['渠道'],
                     rate: totalRate,
                     details: {
-                        '渠道': row['渠道'],
+                        // 移除渠道名，因为标题已经显示
                         '计费重': chargeableWeight.toFixed(2) + 'kg',
                         '原价': '¥' + (totalRate / discount).toFixed(2),
                         '折扣': discountText,
@@ -684,10 +690,12 @@
                     return;
                 }
                 
-                if (row['是否带电'] !== (isElectric ? '是' : '否')) {
-                    console.log(`   ❌ 带电类型不匹配`);
+                // 优化带电逻辑：如果选择了不带电，带电的渠道也显示
+                if (isElectric && row['是否带电'] !== '是') {
+                    console.log(`   ❌ 带电类型不匹配: ${row['是否带电']} ≠ 是`);
                     return;
                 }
+                // 如果选择了不带电(isElectric=false)，则不管row['是否带电']是'是'还是'否'都匹配
                 
                 // 使用计费重匹配，而不是实际重量
                 if (parseFloat(row['重量']) !== matchWeight) {
@@ -706,7 +714,7 @@
                         channel: row['渠道'],
                         rate: totalRate,
                         details: {
-                            '渠道': row['渠道'],
+                            // 移除渠道名，因为标题已经显示
                             '计费重': chargeableWeight.toFixed(2) + 'kg',
                             '总价': '¥' + totalRate.toFixed(2),
                             '备注': row['备注']
@@ -766,12 +774,12 @@
                     return;
                 }
                 
-                // 检查带电类型
-                const expectedElectricType = isElectric ? '是' : '否';
-                if (rowIsElectric !== expectedElectricType) {
-                    console.log(`      ❌ 带电类型不匹配: ${rowIsElectric} ≠ ${expectedElectricType}`);
+                // 优化带电逻辑：如果选择了不带电，带电的渠道也显示
+                if (isElectric && rowIsElectric !== '是') {
+                    console.log(`      ❌ 带电类型不匹配: ${rowIsElectric} ≠ 是`);
                     return;
                 }
+                // 如果选择了不带电(isElectric=false)，则不管rowIsElectric是'是'还是'否'都匹配
                 
                 // 使用计费重匹配重量区间
                 if (startWeight > matchWeight || endWeight < matchWeight) {
@@ -790,7 +798,7 @@
                         channel: row['渠道'],
                         rate: totalRate,
                         details: {
-                            '渠道': row['渠道'],
+                            // 移除渠道名，因为标题已经显示
                             '计费重': chargeableWeight.toFixed(1) + 'kg',
                             '总价': '¥' + totalRate.toFixed(2),
                             '备注': row['备注']
